@@ -1,0 +1,29 @@
+java_library_host {
+    name: "compat-changeid-annotation-processor-lib",
+
+    srcs: [
+        "src/**/*.java",
+    ],
+
+    static_libs: [
+        "guava",
+    ],
+}
+
+java_plugin {
+    name: "compat-changeid-annotation-processor",
+    processor_class: "com.android.compat.annotation.ChangeIdProcessor",
+
+    visibility: ["//visibility:public"],
+
+    java_resources: [
+        "META-INF/**/*",
+    ],
+
+    static_libs: [
+        "compat-changeid-annotation-processor-lib",
+    ],
+    installable: false,
+
+    use_tools_jar: true,
+}
