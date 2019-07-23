@@ -1,0 +1,16 @@
+java_test_host {
+    name: "compat-changeid-annotation-processor-test",
+
+    srcs: [
+        "src/**/*.java",
+    ],
+
+    static_libs: [
+        "compat-changeid-annotation-processor-lib",
+        "junit-host",
+        "objenesis-host",
+        "mockito-host",
+        "truth-prebuilt",
+        "compile-testing-prebuilt",
+    ],
+}
