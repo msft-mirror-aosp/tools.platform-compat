@@ -1,0 +1,5 @@
+This directory contains platform app compat (go/android-compat) tools.
+
+annotation/processors/changeid contains the @ChangeId annotation processor, that transforms the
+change ids (annotated with @ChangeId and optionally with @Disabled/@EnabledAfter) into a
+compat_config xml file listing all the changes and their defaults.
