@@ -130,13 +130,9 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
-        CompilationSubject.assertThat(compilation).succeeded();
-        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "compat",
-                "compat_config.xml").hasContents(ByteSource.wrap(expectedFile.getBytes(UTF_8)));
-        CompilationSubject.assertThat(compilation).hadWarningContaining(
-                "ChangeId is annotated with both @Disabled and @EnabledAfter. @EnabledAfter will "
-                        + "have no effect.");
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
+        CompilationSubject.assertThat(compilation).hadErrorContaining(
+                "ChangeId cannot be annotated with both @Disabled and @EnabledAfter.");
     }
 
     @Test
