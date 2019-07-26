@@ -17,9 +17,13 @@
 package com.android.compat.annotation;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
+
 
 import com.google.common.collect.ImmutableSet;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.util.Set;
 import java.util.Map;
@@ -91,7 +95,16 @@ public class ChangeIdProcessor extends AbstractProcessor {
             writer.addChange(change);
         }
 
-        writer.write(PACKAGE, CONFIG_XML, processingEnv.getFiler());
+        try (OutputStream output = processingEnv.getFiler().createResource(
+                CLASS_OUTPUT,
+                PACKAGE,
+                CONFIG_XML)
+                .openOutputStream()) {
+            writer.write(output);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write output", e);
+        }
+
 
         return true;
     }

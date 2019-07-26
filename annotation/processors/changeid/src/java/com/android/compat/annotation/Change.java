@@ -16,15 +16,19 @@
 
 package com.android.compat.annotation;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * Simple data class that represents a change, built from the code annotations.
  */
+@VisibleForTesting
 public class Change {
     final Long id;
     final String name;
     final boolean disabled;
     final Integer enabledAfter;
 
+    @VisibleForTesting
     public Change(Long id, String name, boolean disabled, Integer enabledAfter) {
         this.id = id;
         this.name = name;
