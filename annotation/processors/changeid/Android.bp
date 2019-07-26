@@ -10,6 +10,19 @@ java_library_host {
     ],
 }
 
+java_library {
+    name: "xml-writer-device-lib",
+
+    srcs: [
+        "src/java/com/android/compat/annotation/XmlWriter.java",
+        "src/java/com/android/compat/annotation/Change.java",
+    ],
+
+    static_libs: [
+        "guava",
+    ],
+}
+
 java_plugin {
     name: "compat-changeid-annotation-processor",
     processor_class: "com.android.compat.annotation.ChangeIdProcessor",

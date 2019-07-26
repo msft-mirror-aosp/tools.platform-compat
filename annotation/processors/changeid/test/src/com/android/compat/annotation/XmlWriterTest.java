@@ -16,70 +16,49 @@
 
 package com.android.compat.annotation;
 
-import static org.mockito.Mockito.when;
-import static org.junit.Assert.assertThat;
 import static org.hamcrest.core.StringStartsWith.startsWith;
+import static org.junit.Assert.assertThat;
 
 import org.junit.Test;
-import org.mockito.Mock;
-
-import javax.annotation.processing.Filer;
-import javax.tools.FileObject;
-import javax.tools.StandardLocation;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 
 public class XmlWriterTest {
 
     private static final String HEADER =
             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
 
-    @Mock private Filer filer;
-    @Mock private FileObject fileObject;
-    private OutputStream outputStream = new ByteArrayOutputStream();
-
-    @Rule public MockitoRule rule = MockitoJUnit.rule();
-
-    @Before
-    public void setUp() throws Exception {
-        when(filer.createResource(StandardLocation.CLASS_OUTPUT, "package", "name")).thenReturn(
-                fileObject);
-        when(fileObject.openOutputStream()).thenReturn(outputStream);
-    }
+    private OutputStream mOutputStream = new ByteArrayOutputStream();
 
     @Test
-    public void testNoChanges() throws Exception {
+    public void testNoChanges() {
         XmlWriter writer = new XmlWriter();
-        writer.write("package", "name", filer);
+        writer.write(mOutputStream);
 
         String expected = HEADER + "<config/>";
 
-        assertThat(outputStream.toString(), startsWith(expected));
+        assertThat(mOutputStream.toString(), startsWith(expected));
     }
 
     @Test
-    public void testOneChange() throws Exception {
+    public void testOneChange() {
         XmlWriter writer = new XmlWriter();
         Change c = new Change(123456789L, "change-name", false, null);
 
         writer.addChange(c);
-        writer.write("package", "name", filer);
+        writer.write(mOutputStream);
 
         String expected = HEADER + "<config>"
                 + "<compat-change id=\"123456789\" name=\"change-name\"/>"
                 + "</config>";
 
-        assertThat(outputStream.toString(), startsWith(expected));
+        assertThat(mOutputStream.toString(), startsWith(expected));
     }
 
     @Test
-    public void testSomeChanges() throws Exception {
+    public void testSomeChanges() {
         XmlWriter writer = new XmlWriter();
         Change c = new Change(111L, "change-name1", false, null);
         Change disabled = new Change(222L, "change-name2", true, null);
@@ -90,7 +69,7 @@ public class XmlWriterTest {
         writer.addChange(disabled);
         writer.addChange(sdkRestricted);
         writer.addChange(both);
-        writer.write("package", "name", filer);
+        writer.write(mOutputStream);
 
         String expected = HEADER + "<config>"
                 + "<compat-change id=\"111\" name=\"change-name1\"/>"
@@ -100,6 +79,6 @@ public class XmlWriterTest {
                 + "name=\"change-name4\"/>"
                 + "</config>";
 
-        assertThat(outputStream.toString(), startsWith(expected));
+        assertThat(mOutputStream.toString(), startsWith(expected));
     }
 }
