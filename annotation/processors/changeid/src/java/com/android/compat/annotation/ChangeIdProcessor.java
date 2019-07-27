@@ -17,11 +17,13 @@
 package com.android.compat.annotation;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
-import static javax.tools.Diagnostic.Kind.WARNING;
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 
 import com.google.common.collect.ImmutableSet;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.util.Set;
 import java.util.Map;
@@ -93,7 +95,16 @@ public class ChangeIdProcessor extends AbstractProcessor {
             writer.addChange(change);
         }
 
-        writer.write(PACKAGE, CONFIG_XML, processingEnv.getFiler());
+        try (OutputStream output = processingEnv.getFiler().createResource(
+                CLASS_OUTPUT,
+                PACKAGE,
+                CONFIG_XML)
+                .openOutputStream()) {
+            writer.write(output);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write output", e);
+        }
+
 
         return true;
     }
@@ -196,9 +207,8 @@ public class ChangeIdProcessor extends AbstractProcessor {
 
         if (disabled && enabledAfter != null) {
             messager.printMessage(
-                    WARNING,
-                    "ChangeId is annotated with both @Disabled and @EnabledAfter. @EnabledAfter "
-                            + "will have no effect.",
+                    ERROR,
+                    "ChangeId cannot be annotated with both @Disabled and @EnabledAfter.",
                     e);
         }
         return new Change(id, name, disabled, enabledAfter);
