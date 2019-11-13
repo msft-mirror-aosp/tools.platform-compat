@@ -1,0 +1,14 @@
+java_library {
+    name: "app-compat-annotations",
+    host_supported: true,
+    srcs: [
+        "src/java/**/*.java",
+    ],
+    // Allow core_current to use the annotations.
+    sdk_version: "current",
+}
+
+filegroup {
+    name: "app-compat-annotations-source",
+    srcs: ["src/java/android/compat/annotation/*.java"],
+}
