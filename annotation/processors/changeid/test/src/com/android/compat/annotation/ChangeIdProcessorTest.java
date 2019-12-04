@@ -41,30 +41,30 @@ public class ChangeIdProcessorTest {
                     "package android.compat.annotation;",
                     "import static java.lang.annotation.ElementType.FIELD;",
                     "import static java.lang.annotation.ElementType.PARAMETER;",
-                    "import static java.lang.annotation.RetentionPolicy.CLASS;",
+                    "import static java.lang.annotation.RetentionPolicy.SOURCE;",
                     "import java.lang.annotation.Retention;",
                     "import java.lang.annotation.Target;",
-                    "@Retention(CLASS)",
+                    "@Retention(SOURCE)",
                     "@Target({FIELD, PARAMETER})",
                     "public @interface ChangeId {",
                     "}"),
             JavaFileObjects.forSourceLines("android.compat.annotation.Disabled",
                     "package android.compat.annotation;",
                     "import static java.lang.annotation.ElementType.FIELD;",
-                    "import static java.lang.annotation.RetentionPolicy.CLASS;",
+                    "import static java.lang.annotation.RetentionPolicy.SOURCE;",
                     "import java.lang.annotation.Retention;",
                     "import java.lang.annotation.Target;",
-                    "@Retention(CLASS)",
+                    "@Retention(SOURCE)",
                     "@Target({FIELD})",
                     "public @interface Disabled {",
                     "}"),
             JavaFileObjects.forSourceLines("android.compat.annotation.EnabledAfter",
                     "package android.compat.annotation;",
                     "import static java.lang.annotation.ElementType.FIELD;",
-                    "import static java.lang.annotation.RetentionPolicy.CLASS;",
+                    "import static java.lang.annotation.RetentionPolicy.SOURCE;",
                     "import java.lang.annotation.Retention;",
                     "import java.lang.annotation.Target;",
-                    "@Retention(CLASS)",
+                    "@Retention(SOURCE)",
                     "@Target({FIELD})",
                     "public @interface EnabledAfter {",
                     "int targetSdkVersion();",
@@ -85,26 +85,32 @@ public class ChangeIdProcessorTest {
                         "import android.compat.annotation.EnabledAfter;",
                         "import android.compat.annotation.Disabled;",
                         "public class Compat {",
+                        "    /**",
+                        "    * description of ",
+                        "    * MY_CHANGE_ID",
+                        "    */",
                         "    @EnabledAfter(targetSdkVersion=29)",
                         "    @ChangeId",
                         "    static final long MY_CHANGE_ID = 123456789l;",
+                        "    /** description of ANOTHER_CHANGE **/",
                         "    @ChangeId",
                         "    @Disabled",
                         "    public static final long ANOTHER_CHANGE = 23456700l;",
                         "}")
         };
         String expectedFile = HEADER + "<config>" +
-                "<compat-change enableAfterTargetSdk=\"29\" id=\"123456789\" "
-                + "name=\"MY_CHANGE_ID\"/>" +
-                "<compat-change disabled=\"true\" id=\"23456700\" name=\"ANOTHER_CHANGE\"/>" +
-                "</config>";
+                "<compat-change description=\"description of MY_CHANGE_ID\" "
+                + "enableAfterTargetSdk=\"29\" id=\"123456789\" name=\"MY_CHANGE_ID\"/>" +
+                "<compat-change description=\"description of ANOTHER_CHANGE\" disabled=\"true\" "
+                + "id=\"23456700\" name=\"ANOTHER_CHANGE\"/>"
+                + "</config>";
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
                         .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).succeeded();
         CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "compat",
-                "compat_config.xml").hasContents(ByteSource.wrap(expectedFile.getBytes(UTF_8)));
+                "compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
     }
 
     @Test
