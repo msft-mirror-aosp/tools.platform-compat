@@ -1,0 +1,8 @@
+{
+  "presubmit": [
+    {
+      "name": "unsupportedappusage-processor-test",
+      "host" : true
+    }
+  ]
+}
