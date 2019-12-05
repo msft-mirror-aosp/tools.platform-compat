@@ -86,7 +86,7 @@ public class ChangeIdProcessorTest {
                         "import android.compat.annotation.Disabled;",
                         "public class Compat {",
                         "    /**",
-                        "    * description of ",
+                        "    * description of",
                         "    * MY_CHANGE_ID",
                         "    */",
                         "    @EnabledAfter(targetSdkVersion=29)",

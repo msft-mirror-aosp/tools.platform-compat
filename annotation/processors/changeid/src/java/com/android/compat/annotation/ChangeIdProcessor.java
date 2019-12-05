@@ -69,8 +69,7 @@ public class ChangeIdProcessor extends AbstractProcessor {
     private static final String ENABLED_AFTER_CLASS_NAME = "android.compat.annotation.EnabledAfter";
     private static final String TARGET_SDK_VERSION = "targetSdkVersion";
 
-    private static final Pattern JAVADOC_SANITIZER = Pattern.compile("^\\s|\\n|\\r",
-            Pattern.MULTILINE);
+    private static final Pattern JAVADOC_SANITIZER = Pattern.compile("^\\s", Pattern.MULTILINE);
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -212,7 +211,8 @@ public class ChangeIdProcessor extends AbstractProcessor {
 
         String description = null;
         if (comment != null) {
-            description = JAVADOC_SANITIZER.matcher(comment).replaceAll("").trim();
+            description = JAVADOC_SANITIZER.matcher(comment).replaceAll("").replaceAll("\\n",
+                    " ").trim();
         }
 
         if (disabled && enabledAfter != null) {
