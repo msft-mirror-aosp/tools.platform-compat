@@ -25,4 +25,9 @@ java_test_host {
         "junit-host",
         "objenesis",
     ],
+
+    test_suites: [
+        "general-tests",
+    ],
+
 }
