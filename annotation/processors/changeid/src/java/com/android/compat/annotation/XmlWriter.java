@@ -39,7 +39,7 @@ import javax.xml.transform.stream.StreamResult;
  * {@code
  * <config>
  *     <compat-change id="111" name="change-name1"/>
- *     <compat-change disabled="true" id="222" name="change-name2"/>
+ *     <compat-change disabled="true" id="222" name="change-name2" description="my change"/>
  *     <compat-change enableAfterTargetSdk="28" id="333" name="change-name3"/>
  * </config>
  *  }
@@ -56,6 +56,7 @@ public final class XmlWriter {
     private static final String XML_ID_ATTR = "id";
     private static final String XML_DISABLED_ATTR = "disabled";
     private static final String XML_ENABLED_AFTER_ATTR = "enableAfterTargetSdk";
+    private static final String XML_DESCRIPTION_ATTR = "description";
 
     private Document mDocument;
     private Element mRoot;
@@ -77,6 +78,9 @@ public final class XmlWriter {
         }
         if (change.enabledAfter != null) {
             newElement.setAttribute(XML_ENABLED_AFTER_ATTR, change.enabledAfter.toString());
+        }
+        if (change.description != null) {
+            newElement.setAttribute(XML_DESCRIPTION_ATTR, change.description);
         }
         mRoot.appendChild(newElement);
     }

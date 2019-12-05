@@ -27,12 +27,15 @@ public class Change {
     final String name;
     final boolean disabled;
     final Integer enabledAfter;
+    final String description;
 
     @VisibleForTesting
-    public Change(Long id, String name, boolean disabled, Integer enabledAfter) {
+    public Change(Long id, String name, boolean disabled, Integer enabledAfter,
+            String description) {
         this.id = id;
         this.name = name;
         this.disabled = disabled;
         this.enabledAfter = enabledAfter;
+        this.description = description;
     }
 }
