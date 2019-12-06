@@ -2,7 +2,9 @@ java_library {
     name: "app-compat-annotations",
     host_supported: true,
     srcs: [
-        "src/java/**/*.java",
+        "src/java/android/compat/annotation/ChangeId.java",
+        "src/java/android/compat/annotation/Disabled.java",
+        "src/java/android/compat/annotation/EnabledAfter.java",
     ],
     // Allow core_current to use the annotations.
     sdk_version: "current",
@@ -10,5 +12,17 @@ java_library {
 
 filegroup {
     name: "app-compat-annotations-source",
-    srcs: ["src/java/android/compat/annotation/*.java"],
+    srcs: [
+        "src/java/android/compat/annotation/ChangeId.java",
+        "src/java/android/compat/annotation/Disabled.java",
+        "src/java/android/compat/annotation/EnabledAfter.java",
+        "src/java/android/compat/annotation/UnsupportedAppUsage.java",
+    ],
+}
+
+java_library {
+    name: "unsupportedappusage",
+    srcs: [
+        "src/java/android/compat/annotation/UnsupportedAppUsage.java",
+    ],
 }
