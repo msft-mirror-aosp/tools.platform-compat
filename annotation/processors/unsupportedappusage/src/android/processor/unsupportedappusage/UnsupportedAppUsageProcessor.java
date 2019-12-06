@@ -53,8 +53,10 @@ import javax.tools.Diagnostic;
  *
  * This is used for automating updates to the annotations themselves.
  */
-@SupportedAnnotationTypes({"android.annotation.UnsupportedAppUsage",
-        "dalvik.annotation.compat.UnsupportedAppUsage"
+@SupportedAnnotationTypes({
+        "android.annotation.UnsupportedAppUsage",
+        "dalvik.annotation.compat.UnsupportedAppUsage",
+        "android.compat.annotation.UnsupportedAppUsage",
 })
 public class UnsupportedAppUsageProcessor extends AbstractProcessor {
 
