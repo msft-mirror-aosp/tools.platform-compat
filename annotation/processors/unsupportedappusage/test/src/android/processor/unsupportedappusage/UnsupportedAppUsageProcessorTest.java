@@ -35,8 +35,8 @@ import javax.tools.StandardLocation;
 public class UnsupportedAppUsageProcessorTest {
 
     private static final JavaFileObject ANNOTATION = JavaFileObjects.forSourceLines(
-            "dalvik.dalvik.annotation.compat.UnsupportedAppUsage",
-            "package dalvik.annotation.compat;",
+            "android.compat.annotation.UnsupportedAppUsage",
+            "package android.compat.annotation;",
             "public @interface UnsupportedAppUsage {",
             "    String expectedSignature() default \"\";\n",
             "    String someProperty() default \"\";",
@@ -46,7 +46,7 @@ public class UnsupportedAppUsageProcessorTest {
     private CsvReader compileAndReadCsv(JavaFileObject source) throws IOException {
         Compilation compilation =
                 Compiler.javac().withProcessors(new UnsupportedAppUsageProcessor())
-                .compile(ANNOTATION, source);
+                        .compile(ANNOTATION, source);
         CompilationSubject.assertThat(compilation).succeeded();
         Optional<JavaFileObject> csv = compilation.generatedFile(StandardLocation.CLASS_OUTPUT,
                 "unsupportedappusage/unsupportedappusage_index.csv");
@@ -59,7 +59,7 @@ public class UnsupportedAppUsageProcessorTest {
     public void testSignatureFormat() throws Exception {
         JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
                 "package a.b;",
-                "import dalvik.annotation.compat.UnsupportedAppUsage;",
+                "import android.compat.annotation.UnsupportedAppUsage;",
                 "public class Class {",
                 "  @UnsupportedAppUsage",
                 "  public void method() {}",
@@ -73,7 +73,7 @@ public class UnsupportedAppUsageProcessorTest {
     public void testSourcePosition() throws Exception {
         JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
                 "package a.b;", // 1
-                "import dalvik.annotation.compat.UnsupportedAppUsage;", // 2
+                "import android.compat.annotation.UnsupportedAppUsage;", // 2
                 "public class Class {", // 3
                 "  @UnsupportedAppUsage", // 4
                 "  public void method() {}", // 5
@@ -89,7 +89,7 @@ public class UnsupportedAppUsageProcessorTest {
     public void testAnnotationProperties() throws Exception {
         JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
                 "package a.b;", // 1
-                "import dalvik.annotation.compat.UnsupportedAppUsage;", // 2
+                "import android.compat.annotation.UnsupportedAppUsage;", // 2
                 "public class Class {", // 3
                 "  @UnsupportedAppUsage(someProperty=\"value\")", // 4
                 "  public void method() {}", // 5
@@ -102,7 +102,7 @@ public class UnsupportedAppUsageProcessorTest {
     public void testSourcePositionOverride() throws Exception {
         JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
                 "package a.b;", // 1
-                "import dalvik.annotation.compat.UnsupportedAppUsage;", // 2
+                "import android.compat.annotation.UnsupportedAppUsage;", // 2
                 "public class Class {", // 3
                 "  @UnsupportedAppUsage(overrideSourcePosition=\"otherfile.aidl:30:10:31:20\")",
                 "  public void method() {}", // 5
@@ -120,7 +120,7 @@ public class UnsupportedAppUsageProcessorTest {
     public void testSourcePositionOverrideWrongFormat() throws Exception {
         JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
                 "package a.b;", // 1
-                "import dalvik.annotation.compat.UnsupportedAppUsage;", // 2
+                "import android.compat.annotation.UnsupportedAppUsage;", // 2
                 "public class Class {", // 3
                 "  @UnsupportedAppUsage(overrideSourcePosition=\"invalid\")", // 4
                 "  public void method() {}", // 5
@@ -131,14 +131,14 @@ public class UnsupportedAppUsageProcessorTest {
         CompilationSubject.assertThat(compilation).failed();
         CompilationSubject.assertThat(compilation).hadErrorContaining(
                 "Expected overrideSourcePosition to have format "
-                + "file:startLine:startCol:endLine:endCol").inFile(src).onLine(4);
+                        + "file:startLine:startCol:endLine:endCol").inFile(src).onLine(4);
     }
 
     @Test
     public void testSourcePositionOverrideInvalidInt() throws Exception {
         JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
                 "package a.b;", // 1
-                "import dalvik.annotation.compat.UnsupportedAppUsage;", // 2
+                "import android.compat.annotation.UnsupportedAppUsage;", // 2
                 "public class Class {", // 3
                 "  @UnsupportedAppUsage(overrideSourcePosition=\"otherfile.aidl:a:b:c:d\")", // 4
                 "  public void method() {}", // 5
@@ -149,6 +149,38 @@ public class UnsupportedAppUsageProcessorTest {
         CompilationSubject.assertThat(compilation).failed();
         CompilationSubject.assertThat(compilation).hadErrorContaining(
                 "error parsing integer").inFile(src).onLine(4);
+    }
+
+    @Test
+    public void testExpectedSignatureSucceedsIfMatching() throws Exception {
+        JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
+                "package a.b;", // 1
+                "import android.compat.annotation.UnsupportedAppUsage;", // 2
+                "public class Class {", // 3
+                "  @UnsupportedAppUsage(expectedSignature=\"La/b/Class;->method()V\")", // 4
+                "  public void method() {}", // 5
+                "}");
+        Compilation compilation =
+                Compiler.javac().withProcessors(new UnsupportedAppUsageProcessor())
+                        .compile(ANNOTATION, src);
+        CompilationSubject.assertThat(compilation).succeeded();
+    }
+
+    @Test
+    public void testExpectedSignatureThrowsErrorIfWrong() throws Exception {
+        JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
+                "package a.b;", // 1
+                "import android.compat.annotation.UnsupportedAppUsage;", // 2
+                "public class Class {", // 3
+                "  @UnsupportedAppUsage(expectedSignature=\"expected\")", // 4
+                "  public void method() {}", // 5
+                "}");
+        Compilation compilation =
+                Compiler.javac().withProcessors(new UnsupportedAppUsageProcessor())
+                        .compile(ANNOTATION, src);
+        CompilationSubject.assertThat(compilation).failed();
+        CompilationSubject.assertThat(compilation).hadErrorContaining(
+                "Expected signature doesn't match generated signature").inFile(src).onLine(5);
     }
 
 }
