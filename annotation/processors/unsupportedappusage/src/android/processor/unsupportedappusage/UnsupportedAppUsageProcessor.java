@@ -19,7 +19,6 @@ package android.processor.unsupportedappusage;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Pair;
@@ -27,7 +26,6 @@ import com.sun.tools.javac.util.Position;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.annotation.Annotation;
 import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Set;
@@ -46,17 +44,16 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 
 /**
- * Annotation processor for {@link UnsupportedAppUsage} annotations.
+ * Annotation processor for {@code UnsupportedAppUsage} annotation.
  *
- * This processor currently outputs a CSV file with a mapping of dex signatures to corresponding
- * source positions.
- *
- * This is used for automating updates to the annotations themselves.
+ * <p>This processor generates a CSV file with a mapping of dex signatures of elements annotated
+ * with @UnsupportedAppUsage to corresponding source positions for their UnsupportedAppUsage
+ * annotaion.
  */
 @SupportedAnnotationTypes({
         "android.annotation.UnsupportedAppUsage",
-        "dalvik.annotation.compat.UnsupportedAppUsage",
         "android.compat.annotation.UnsupportedAppUsage",
+        "dalvik.annotation.compat.UnsupportedAppUsage",
 })
 public class UnsupportedAppUsageProcessor extends AbstractProcessor {
 
@@ -65,12 +62,6 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
     private static final String PACKAGE = "unsupportedappusage";
     private static final String INDEX_CSV = "unsupportedappusage_index.csv";
 
-    private static final ImmutableSet<Class<? extends Annotation>> SUPPORTED_ANNOTATIONS =
-            ImmutableSet.of(android.annotation.UnsupportedAppUsage.class,
-                    dalvik.annotation.compat.UnsupportedAppUsage.class);
-    private static final ImmutableSet<String> SUPPORTED_ANNOTATION_NAMES =
-            SUPPORTED_ANNOTATIONS.stream().map(annotation -> annotation.getCanonicalName()).collect(
-                    ImmutableSet.toImmutableSet());
     private static final String OVERRIDE_SOURCE_POSITION_PROPERTY = "overrideSourcePosition";
 
     @Override
@@ -103,7 +94,7 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
     private AnnotationMirror getUnsupportedAppUsageAnnotationMirror(Element e) {
         for (AnnotationMirror m : e.getAnnotationMirrors()) {
             TypeElement type = (TypeElement) m.getAnnotationType().asElement();
-            if (SUPPORTED_ANNOTATION_NAMES.contains(type.getQualifiedName().toString())) {
+            if (this.getSupportedAnnotationTypes().contains(type.getQualifiedName().toString())) {
                 return m;
             }
         }
@@ -162,7 +153,8 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
                 } catch (NumberFormatException nfe) {
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, String.format(
                             "Expected %s to have format file:startLine:startCol:endLine:endCol; "
-                            + "error parsing integer: %s", OVERRIDE_SOURCE_POSITION_PROPERTY,
+                                    + "error parsing integer: %s",
+                            OVERRIDE_SOURCE_POSITION_PROPERTY,
                             nfe.getMessage()), annotatedElement, annotation);
                     return null;
                 }
@@ -216,16 +208,16 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Map<String, Element> signatureMap = new TreeMap<>();
         SignatureBuilder sb = new SignatureBuilder(processingEnv.getMessager());
-        for (Class<? extends Annotation> supportedAnnotation : SUPPORTED_ANNOTATIONS) {
-            Set<? extends Element> annotated = roundEnv.getElementsAnnotatedWith(
-                    supportedAnnotation);
+
+        for (TypeElement annotation : annotations) {
+            Set<? extends Element> annotated = roundEnv.getElementsAnnotatedWith(annotation);
             if (annotated.size() == 0) {
                 continue;
             }
             // Build signatures for each annotated member and put them in a map from signature to
             // member.
             for (Element e : annotated) {
-                String sig = sb.buildSignature(supportedAnnotation, e);
+                String sig = sb.buildSignature(processingEnv.getTypeUtils(), annotation, e);
                 if (sig != null) {
                     signatureMap.put(sig, e);
                 }

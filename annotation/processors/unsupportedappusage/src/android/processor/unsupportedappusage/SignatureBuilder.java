@@ -18,21 +18,17 @@ package android.processor.unsupportedappusage;
 
 import static javax.lang.model.element.ElementKind.PACKAGE;
 import static javax.tools.Diagnostic.Kind.ERROR;
-import static javax.tools.Diagnostic.Kind.WARNING;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.sun.tools.javac.code.Type;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import javax.annotation.processing.Messager;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
@@ -42,6 +38,7 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
 
 /**
  * Builds a dex signature for a given method or field.
@@ -61,20 +58,6 @@ public class SignatureBuilder {
             .build();
 
     private final Messager mMessager;
-
-    /**
-     * Exception used internally when we can't build a signature. Whenever this is thrown, an error
-     * will also be written to the Messager.
-     */
-    private class SignatureBuilderException extends Exception {
-        public SignatureBuilderException(String message) {
-            super(message);
-        }
-
-        public void report(Element offendingElement) {
-            mMessager.printMessage(ERROR, getMessage(), offendingElement);
-        }
-    }
 
     public SignatureBuilder(Messager messager) {
         mMessager = messager;
@@ -205,7 +188,7 @@ public class SignatureBuilder {
      * @param annotationType type of annotation being processed.
      * @param element        element for which we want to create a signature.
      */
-    public String buildSignature(Class<? extends Annotation> annotationType, Element element) {
+    public String buildSignature(Types types, TypeElement annotation, Element element) {
         try {
             String signature;
             switch (element.getKind()) {
@@ -221,38 +204,54 @@ public class SignatureBuilder {
                 default:
                     return null;
             }
+
             // Obtain annotation objects
-            Annotation annotation = element.getAnnotation(annotationType);
-            if (annotation == null) {
+            AnnotationMirror annotationMirror = null;
+            for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+                if (types.isSameType(annotation.asType(), mirror.getAnnotationType())) {
+                    annotationMirror = mirror;
+                    break;
+                }
+            }
+            if (annotationMirror == null) {
                 throw new IllegalStateException(
                         "Element doesn't have any UnsupportedAppUsage annotation");
             }
-            try {
-                Method expectedSignatureMethod = annotationType.getMethod("expectedSignature");
-                // If we have an expected signature on the annotation, warn if it doesn't match.
-                String expectedSignature = expectedSignatureMethod.invoke(annotation).toString();
-                if (!Strings.isNullOrEmpty(expectedSignature)) {
-                    if (!signature.equals(expectedSignature)) {
-                        mMessager.printMessage(
-                                WARNING,
-                                String.format(
-                                        "Expected signature doesn't match generated signature.\n"
-                                                + " Expected:  %s\n Generated: %s",
-                                        expectedSignature, signature),
-                                element);
-                    }
-                }
-                return signature;
-            } catch (NoSuchMethodException e) {
-                throw new IllegalStateException(
-                        "Annotation type does not have expectedSignature parameter", e);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                throw new IllegalStateException(
-                        "Could not get expectedSignature parameter for annotation", e);
+
+            // If we have an expected signature on the annotation, warn if it doesn't match.
+            String expectedSignature = annotationMirror.getElementValues().entrySet().stream()
+                    .filter(e -> e.getKey().getSimpleName().contentEquals("expectedSignature"))
+                    .map(e -> (String) e.getValue().getValue())
+                    .findAny()
+                    .orElse(signature);
+            if (!signature.equals(expectedSignature)) {
+                mMessager.printMessage(
+                        ERROR,
+                        String.format(
+                                "Expected signature doesn't match generated signature.\n"
+                                        + " Expected:  %s\n Generated: %s",
+                                expectedSignature, signature),
+                        element);
             }
+
+            return signature;
         } catch (SignatureBuilderException problem) {
             problem.report(element);
             return null;
+        }
+    }
+
+    /**
+     * Exception used internally when we can't build a signature. Whenever this is thrown, an error
+     * will also be written to the Messager.
+     */
+    private class SignatureBuilderException extends Exception {
+        public SignatureBuilderException(String message) {
+            super(message);
+        }
+
+        public void report(Element offendingElement) {
+            mMessager.printMessage(ERROR, getMessage(), offendingElement);
         }
     }
 }
