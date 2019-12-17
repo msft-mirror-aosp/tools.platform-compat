@@ -1,0 +1,5 @@
+python_binary_host {
+    name: "process-compat-config",
+    main: "process_compat_config.py",
+    srcs: ["process_compat_config.py"],
+}
