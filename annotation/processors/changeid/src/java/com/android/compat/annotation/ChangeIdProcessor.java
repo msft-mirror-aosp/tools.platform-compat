@@ -20,13 +20,22 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.Map;
+import java.util.Stack;
 import java.util.regex.Pattern;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -38,6 +47,7 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.annotation.processing.Messager;
@@ -55,7 +65,6 @@ import javax.lang.model.util.Elements;
 @SupportedAnnotationTypes({"android.compat.annotation.ChangeId"})
 public class ChangeIdProcessor extends AbstractProcessor {
 
-    private static final String PACKAGE = "compat";
     private static final String CONFIG_XML = "compat_config.xml";
 
     private static final ImmutableSet<String> IGNORED_METHOD_NAMES =
@@ -70,6 +79,33 @@ public class ChangeIdProcessor extends AbstractProcessor {
     private static final String TARGET_SDK_VERSION = "targetSdkVersion";
 
     private static final Pattern JAVADOC_SANITIZER = Pattern.compile("^\\s", Pattern.MULTILINE);
+
+    /**
+     * Used as a map key when sharding by classname.
+     */
+    class PackageClass {
+        final String javaPackage;
+        final String javaClass;
+
+        PackageClass(String pkg, String cls) {
+            this.javaPackage = pkg;
+            this.javaClass = cls;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof PackageClass) {
+                PackageClass that = (PackageClass) obj;
+                return Objects.equal(this.javaPackage, that.javaPackage) &&
+                        Objects.equal(this.javaClass, that.javaClass);
+            }
+            return false;
+        }
+
+        public int hashCode() {
+            return Objects.hashCode(javaPackage, javaClass);
+        }
+    }
 
     @Override
     public SourceVersion getSupportedSourceVersion() {
@@ -88,7 +124,7 @@ public class ChangeIdProcessor extends AbstractProcessor {
             return true;
         }
 
-        XmlWriter writer = new XmlWriter();
+        Map<PackageClass, XmlWriter> writersByClass = new HashMap<>();
 
         for (Element e : annotatedElements) {
             if (!isValidChangeId(e, processingEnv.getMessager())) {
@@ -96,17 +132,26 @@ public class ChangeIdProcessor extends AbstractProcessor {
             }
             Change change = createChange(e, processingEnv.getMessager(),
                     processingEnv.getElementUtils().getDocComment(e));
+            PackageClass key = new PackageClass(change.javaPackage, change.className);
+            XmlWriter writer = writersByClass.get(key);
+            if (writer == null) {
+                writer = new XmlWriter();
+                writersByClass.put(key, writer);
+            }
             writer.addChange(change);
         }
 
-        try (OutputStream output = processingEnv.getFiler().createResource(
-                CLASS_OUTPUT,
-                PACKAGE,
-                CONFIG_XML)
-                .openOutputStream()) {
-            writer.write(output);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to write output", e);
+        for (Map.Entry<PackageClass, XmlWriter> entry : writersByClass.entrySet()) {
+            PackageClass key = entry.getKey();
+            try (OutputStream output = processingEnv.getFiler().createResource(
+                    CLASS_OUTPUT,
+                    key.javaPackage,
+                    key.javaClass + "_" + CONFIG_XML)
+                    .openOutputStream()) {
+                entry.getValue().write(output);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to write output for " + entry.getKey(), e);
+            }
         }
 
 
@@ -188,6 +233,38 @@ public class ChangeIdProcessor extends AbstractProcessor {
         return true;
     }
 
+    private <E extends Element> E getEnclosingElementByKind(Element element, ElementKind kind) {
+        while (element != null && element.getKind() != kind) {
+            element = element.getEnclosingElement();
+        }
+        return (E) element;
+    }
+
+    /**
+     * Returns the qualified name of a class within its package. For a regular class, this will be
+     * "ClassName"; for an inner class it will be "ClassName$Inner".
+     */
+    private String getClass(Element element) {
+        TypeElement t = getEnclosingElementByKind(element, ElementKind.CLASS);
+        if (t == null) {
+            throw new UnsupportedOperationException("Element " + element + " is not in a class");
+        }
+        List<String> classes = new ArrayList<>();
+        while (t != null) {
+            classes.add(t.getSimpleName().toString());
+            t = getEnclosingElementByKind(t.getEnclosingElement(), ElementKind.CLASS);
+        }
+        return Joiner.on("$").join(Lists.reverse(classes));
+    }
+
+    private String getPackage(Element element) {
+        PackageElement p = getEnclosingElementByKind(element, ElementKind.PACKAGE);
+        if (p == null) {
+            throw new UnsupportedOperationException("Element " + element + " is not in a package");
+        }
+        return p.getQualifiedName().toString();
+    }
+
     private Change createChange(Element e, Messager messager, String comment) {
         Long id = (Long) ((VariableElement) e).getConstantValue();
         String name = e.getSimpleName().toString();
@@ -221,6 +298,6 @@ public class ChangeIdProcessor extends AbstractProcessor {
                     "ChangeId cannot be annotated with both @Disabled and @EnabledAfter.",
                     e);
         }
-        return new Change(id, name, disabled, enabledAfter, description);
+        return new Change(id, name, disabled, enabledAfter, description, getPackage(e), getClass(e));
     }
 }

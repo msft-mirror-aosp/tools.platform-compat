@@ -76,7 +76,7 @@ public class ChangeIdProcessorTest {
             "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
 
     @Test
-    public void testSuccessfulCompilation() {
+    public void testCompatConfigXmlOutput() {
         JavaFileObject[] source = {
                 JavaFileObjects.forSourceLines(
                         "libcore.util.Compat",
@@ -109,8 +109,85 @@ public class ChangeIdProcessorTest {
                         .withProcessors(new ChangeIdProcessor())
                         .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).succeeded();
-        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "compat",
-                "compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
+        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
+                "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
+    }
+
+    @Test
+    public void testCompatConfigXmlOutput_mutliplePackages() {
+        JavaFileObject[] source = {
+                JavaFileObjects.forSourceLines(
+                        "libcore.util.Compat",
+                        "package libcore.util;",
+                        "import android.compat.annotation.ChangeId;",
+                        "import android.compat.annotation.EnabledAfter;",
+                        "import android.compat.annotation.Disabled;",
+                        "public class Compat {",
+                        "    /**",
+                        "    * description of",
+                        "    * MY_CHANGE_ID",
+                        "    */",
+                        "    @ChangeId",
+                        "    static final long MY_CHANGE_ID = 123456789l;",
+                        "}"),
+                JavaFileObjects.forSourceLines("android.util.SomeClass",
+                        "package android.util;",
+                        "import android.compat.annotation.ChangeId;",
+                        "import android.compat.annotation.EnabledAfter;",
+                        "import android.compat.annotation.Disabled;",
+                        "public class SomeClass {",
+                        "    /** description of ANOTHER_CHANGE **/",
+                        "    @ChangeId",
+                        "    public static final long ANOTHER_CHANGE = 23456700l;",
+                        "}")
+        };
+        String libcoreExpectedFile = HEADER + "<config>" +
+                "<compat-change description=\"description of MY_CHANGE_ID\" "
+                + "id=\"123456789\" name=\"MY_CHANGE_ID\"/></config>";
+        String androidExpectedFile = HEADER + "<config>" +
+                "<compat-change description=\"description of ANOTHER_CHANGE\" "
+                + "id=\"23456700\" name=\"ANOTHER_CHANGE\"/></config>";
+        Compilation compilation =
+                Compiler.javac()
+                        .withProcessors(new ChangeIdProcessor())
+                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+        CompilationSubject.assertThat(compilation).succeeded();
+        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
+                "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(libcoreExpectedFile);
+        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "android.util",
+                "SomeClass_compat_config.xml").contentsAsString(UTF_8).isEqualTo(androidExpectedFile);
+    }
+
+    @Test
+    public void testCompatConfigXmlOutput_innerClass() {
+        JavaFileObject[] source = {
+                JavaFileObjects.forSourceLines(
+                        "libcore.util.Compat",
+                        "package libcore.util;",
+                        "import android.compat.annotation.ChangeId;",
+                        "import android.compat.annotation.EnabledAfter;",
+                        "import android.compat.annotation.Disabled;",
+                        "public class Compat {",
+                        "    public class Inner {",
+                        "        /**",
+                        "        * description of",
+                        "        * MY_CHANGE_ID",
+                        "        */",
+                        "        @ChangeId",
+                        "        static final long MY_CHANGE_ID = 123456789l;",
+                        "    }",
+                        "}"),
+        };
+        String expectedFile = HEADER + "<config>" +
+                "<compat-change description=\"description of MY_CHANGE_ID\" "
+                + "id=\"123456789\" name=\"MY_CHANGE_ID\"/></config>";
+        Compilation compilation =
+                Compiler.javac()
+                        .withProcessors(new ChangeIdProcessor())
+                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+        CompilationSubject.assertThat(compilation).succeeded();
+        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
+                "Compat$Inner_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
     }
 
     @Test
