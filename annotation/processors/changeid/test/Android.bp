@@ -13,4 +13,8 @@ java_test_host {
         "truth-prebuilt",
         "compile-testing-prebuilt",
     ],
+
+    test_suites: [
+        "general-tests",
+    ],
 }
