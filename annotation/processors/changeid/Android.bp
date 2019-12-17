@@ -8,6 +8,16 @@ java_library_host {
     static_libs: [
         "guava",
     ],
+
+    openjdk9: {
+        javacflags: [
+            "--add-modules=jdk.compiler",
+            "--add-exports jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
+            "--add-exports jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
+            "--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
+            "--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
+        ],
+    },
 }
 
 java_library {
@@ -21,6 +31,7 @@ java_library {
     static_libs: [
         "guava",
     ],
+
 }
 
 java_plugin {

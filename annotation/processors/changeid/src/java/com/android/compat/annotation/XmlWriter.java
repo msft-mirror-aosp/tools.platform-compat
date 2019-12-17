@@ -38,13 +38,22 @@ import javax.xml.transform.stream.StreamResult;
  * <pre>
  * {@code
  * <config>
- *     <compat-change id="111" name="change-name1"/>
- *     <compat-change disabled="true" id="222" name="change-name2" description="my change"/>
- *     <compat-change enableAfterTargetSdk="28" id="333" name="change-name3"/>
+ *     <compat-change id="111" name="change-name1">
+ *         <meta-data definedIn="java.package.ClassName" sourcePosition="java/package/ClassName.java:10" />
+ *     </compat-change>
+ *     <compat-change disabled="true" id="222" name="change-name2" description="my change">
+ *         <meta-data .../>
+ *     </compat-change>
+ *     <compat-change enableAfterTargetSdk="28" id="333" name="change-name3">
+ *         <meta-data .../>
+ *     </compat-change>
  * </config>
  *  }
  *
  * </pre>
+ *
+ * The inner {@code meta-data} tags are intended to be stripped before embedding the config on a
+ * device. They are intended for use by intermediate build tools only.
  *
  */
 @VisibleForTesting
@@ -57,6 +66,9 @@ public final class XmlWriter {
     private static final String XML_DISABLED_ATTR = "disabled";
     private static final String XML_ENABLED_AFTER_ATTR = "enableAfterTargetSdk";
     private static final String XML_DESCRIPTION_ATTR = "description";
+    private static final String XML_METADATA_ELEMENT = "meta-data";
+    private static final String XML_DEFINED_IN = "definedIn";
+    private static final String XML_SOURCE_POSITION = "sourcePosition";
 
     private Document mDocument;
     private Element mRoot;
@@ -81,6 +93,16 @@ public final class XmlWriter {
         }
         if (change.description != null) {
             newElement.setAttribute(XML_DESCRIPTION_ATTR, change.description);
+        }
+        Element metaData = mDocument.createElement(XML_METADATA_ELEMENT);
+        if (change.qualifiedClass != null) {
+            metaData.setAttribute(XML_DEFINED_IN, change.qualifiedClass);
+        }
+        if (change.sourcePosition != null) {
+            metaData.setAttribute(XML_SOURCE_POSITION, change.sourcePosition);
+        }
+        if (metaData.hasAttributes()) {
+            newElement.appendChild(metaData);
         }
         mRoot.appendChild(newElement);
     }
