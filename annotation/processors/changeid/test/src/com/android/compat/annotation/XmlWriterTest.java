@@ -45,7 +45,7 @@ public class XmlWriterTest {
     @Test
     public void testOneChange() {
         XmlWriter writer = new XmlWriter();
-        Change c = new Change(123456789L, "change-name", false, null, null);
+        Change c = new Change(123456789L, "change-name", false, null, null, "pkg", "cls");
 
         writer.addChange(c);
         writer.write(mOutputStream);
@@ -60,10 +60,10 @@ public class XmlWriterTest {
     @Test
     public void testSomeChanges() {
         XmlWriter writer = new XmlWriter();
-        Change c = new Change(111L, "change-name1", false, null, "my nice change");
-        Change disabled = new Change(222L, "change-name2", true, null, null);
-        Change sdkRestricted = new Change(333L, "change-name3", false, 28, "");
-        Change both = new Change(444L, "change-name4", true, 29, null);
+        Change c = new Change(111L, "change-name1", false, null, "my nice change", "pkg", "cls");
+        Change disabled = new Change(222L, "change-name2", true, null, null, "pkg", "cls");
+        Change sdkRestricted = new Change(333L, "change-name3", false, 28, "", "pkg", "cls");
+        Change both = new Change(444L, "change-name4", true, 29, null, "pkg", "cls");
 
         writer.addChange(c);
         writer.addChange(disabled);
