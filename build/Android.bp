@@ -3,3 +3,13 @@ python_binary_host {
     main: "process_compat_config.py",
     srcs: ["process_compat_config.py"],
 }
+
+python_test_host {
+    name: "process-compat-config-test",
+    main: "process-compat-config-test.py",
+    srcs: [
+        "process-compat-config-test.py",
+        "process_compat_config.py",
+    ],
+    test_suites: ["general-tests"],
+}
