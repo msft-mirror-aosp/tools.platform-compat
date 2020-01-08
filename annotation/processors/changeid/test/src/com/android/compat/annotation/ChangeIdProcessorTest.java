@@ -100,9 +100,12 @@ public class ChangeIdProcessorTest {
         };
         String expectedFile = HEADER + "<config>" +
                 "<compat-change description=\"description of MY_CHANGE_ID\" "
-                + "enableAfterTargetSdk=\"29\" id=\"123456789\" name=\"MY_CHANGE_ID\"/>" +
-                "<compat-change description=\"description of ANOTHER_CHANGE\" disabled=\"true\" "
-                + "id=\"23456700\" name=\"ANOTHER_CHANGE\"/>"
+                + "enableAfterTargetSdk=\"29\" id=\"123456789\" name=\"MY_CHANGE_ID\">"
+                + "<meta-data definedIn=\"libcore.util.Compat\" "
+                + "sourcePosition=\"libcore/util/Compat.java:11\"/></compat-change>"
+                + "<compat-change description=\"description of ANOTHER_CHANGE\" disabled=\"true\" "
+                + "id=\"23456700\" name=\"ANOTHER_CHANGE\"><meta-data definedIn=\"libcore.util"
+                + ".Compat\" sourcePosition=\"libcore/util/Compat.java:14\"/></compat-change>"
                 + "</config>";
         Compilation compilation =
                 Compiler.javac()
@@ -143,10 +146,15 @@ public class ChangeIdProcessorTest {
         };
         String libcoreExpectedFile = HEADER + "<config>" +
                 "<compat-change description=\"description of MY_CHANGE_ID\" "
-                + "id=\"123456789\" name=\"MY_CHANGE_ID\"/></config>";
+                + "id=\"123456789\" name=\"MY_CHANGE_ID\">"
+                + "<meta-data definedIn=\"libcore.util.Compat\" "
+                + "sourcePosition=\"libcore/util/Compat.java:10\"/></compat-change>"
+                + "</config>";
         String androidExpectedFile = HEADER + "<config>" +
                 "<compat-change description=\"description of ANOTHER_CHANGE\" "
-                + "id=\"23456700\" name=\"ANOTHER_CHANGE\"/></config>";
+                + "id=\"23456700\" name=\"ANOTHER_CHANGE\"><meta-data definedIn=\"android.util"
+                + ".SomeClass\" sourcePosition=\"android/util/SomeClass.java:7\"/></compat-change>"
+                + "</config>";
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
@@ -180,14 +188,16 @@ public class ChangeIdProcessorTest {
         };
         String expectedFile = HEADER + "<config>" +
                 "<compat-change description=\"description of MY_CHANGE_ID\" "
-                + "id=\"123456789\" name=\"MY_CHANGE_ID\"/></config>";
+                + "id=\"123456789\" name=\"MY_CHANGE_ID\"><meta-data definedIn=\"libcore.util"
+                + ".Compat.Inner\" sourcePosition=\"libcore/util/Compat.java:11\"/>"
+                + "</compat-change></config>";
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
                         .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).succeeded();
         CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
-                "Compat$Inner_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
+                "Compat.Inner_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
     }
 
     @Test
