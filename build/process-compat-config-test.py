@@ -18,15 +18,23 @@
 
 import difflib
 import io
+from StringIO import StringIO
 import unittest
 import xml.dom.minidom
+from inspect import currentframe, getframeinfo
 
 import process_compat_config
+
+def here():
+    f = currentframe().f_back
+    return "%s:%d" % (getframeinfo(f).filename, f.f_lineno)
 
 class ProcessCompatConfigTest(unittest.TestCase):
 
     def setUp(self):
-        self.merger = process_compat_config.ConfigMerger()
+        self.merger = process_compat_config.ConfigMerger(detect_conflicts = True)
+        self.stderr = StringIO()
+        self.merger.write_errors_to = self.stderr
         self.xml = io.BytesIO()
 
     def assert_same_xml(self, got, expected):
@@ -40,39 +48,64 @@ class ProcessCompatConfigTest(unittest.TestCase):
         self.assert_same_xml(self.xml.getvalue(), "<config />")
 
     def test_merge_one_file(self):
-        self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE" /></config>'))
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE" /></config>'), here())
         self.merger.write(self.xml)
         self.assert_same_xml(self.xml.getvalue(), '<config><compat-change id="1234" name="TEST_CHANGE" /></config>')
 
     def test_merge_two_files(self):
-        self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE" /></config>'))
-        self.merger.merge(io.BytesIO(b'<config><compat-change id="1235" name="TEST_CHANGE2" /></config>'))
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE" /></config>'), here())
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1235" name="TEST_CHANGE2" /></config>'), here())
         self.merger.write(self.xml)
         self.assert_same_xml(self.xml.getvalue(),
             '<config><compat-change id="1234" name="TEST_CHANGE" /><compat-change id="1235" name="TEST_CHANGE2" /></config>')
 
     def test_merge_two_files_metadata(self):
         self.merger.merge(io.BytesIO(
-            b'<config><compat-change id="1234" name="TEST_CHANGE"><metadata definedIn="some.Class" />'
-            b'</compat-change></config>'))
+            b'<config><compat-change id="1234" name="TEST_CHANGE"><meta-data definedIn="some.Class" sourcePosition="some.java:1" />'
+            b'</compat-change></config>'), here())
         self.merger.merge(io.BytesIO(
-            b'<config><compat-change id="1235" name="TEST_CHANGE2"><metadata definedIn="other.Class" />'
-            b'</compat-change></config>'))
+            b'<config><compat-change id="1235" name="TEST_CHANGE2"><meta-data definedIn="other.Class" sourcePosition="other.java:2" />'
+            b'</compat-change></config>'), here())
         self.merger.write(self.xml)
         self.assert_same_xml(self.xml.getvalue(), b'<config>'
-            b'<compat-change id="1234" name="TEST_CHANGE"><metadata definedIn="some.Class" /></compat-change>'
-            b'<compat-change id="1235" name="TEST_CHANGE2"><metadata definedIn="other.Class" /></compat-change>'
+            b'<compat-change id="1234" name="TEST_CHANGE"><meta-data definedIn="some.Class" sourcePosition="some.java:1" /></compat-change>'
+            b'<compat-change id="1235" name="TEST_CHANGE2"><meta-data definedIn="other.Class" sourcePosition="other.java:2" /></compat-change>'
             b'</config>')
 
     def test_write_device_config_metadata_stripped(self):
         self.merger.merge(io.BytesIO(
-            b'<config><compat-change id="1234" name="TEST_CHANGE"><metadata definedIn="some.Class" />'
-            b'</compat-change></config>'))
+            b'<config><compat-change id="1234" name="TEST_CHANGE"><meta-data definedIn="some.Class" sourcePosition="file.java:1"/>'
+            b'</compat-change></config>'), here())
         self.merger.write_device_config(self.xml)
         self.assert_same_xml(self.xml.getvalue(), b'<config>'
             b'<compat-change id="1234" name="TEST_CHANGE" />'
             b'</config>')
 
+    def test_merge_two_files_duplicate_id(self):
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE" /></config>'), here())
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE2" /></config>'), here())
+        self.assertIn(r'ERROR: Duplicate definitions for compat change with ID 1234', self.stderr.getvalue())
+        with self.assertRaisesRegexp(Exception, ' 1 .*error'):
+            self.merger.write(self.xml)
+
+    def test_merge_two_files_duplicate_name(self):
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE" /></config>'), here())
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1235" name="TEST_CHANGE" /></config>'), here())
+        self.assertIn(r'ERROR: Duplicate definitions for compat change with name TEST_CHANGE', self.stderr.getvalue())
+        with self.assertRaisesRegexp(Exception, ' 1 .*error'):
+            self.merger.write(self.xml)
+
+    def test_merge_two_files_duplicate_id_allow_duplicates(self):
+        self.merger = process_compat_config.ConfigMerger(detect_conflicts = False)
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE" /></config>'), here())
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE2" /></config>'), here())
+        self.merger.write(self.xml)
+
+    def test_merge_two_files_duplicate_name_allow_duplicates(self):
+        self.merger = process_compat_config.ConfigMerger(detect_conflicts = False)
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE" /></config>'), here())
+        self.merger.merge(io.BytesIO(b'<config><compat-change id="1235" name="TEST_CHANGE" /></config>'), here())
+        self.merger.write(self.xml)
 
 if __name__ == '__main__':
   unittest.main(verbosity=2)
