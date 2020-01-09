@@ -19,41 +19,39 @@ package com.android.compat.annotation;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
-
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.sun.tools.javac.model.JavacElements;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.util.Pair;
+import com.sun.tools.javac.util.Position;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
-import java.util.Stack;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Messager;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.annotation.processing.Messager;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeKind;
-import javax.lang.model.util.Elements;
 
 /**
  * Annotation processor for ChangeId annotations.
@@ -233,71 +231,83 @@ public class ChangeIdProcessor extends AbstractProcessor {
         return true;
     }
 
-    private <E extends Element> E getEnclosingElementByKind(Element element, ElementKind kind) {
+    private static <E extends Element> E getEnclosingElementByKind(Element element, ElementKind kind) {
         while (element != null && element.getKind() != kind) {
             element = element.getEnclosingElement();
         }
         return (E) element;
     }
 
+    private String getQualifiedClass(Element element){
+        TypeElement t = getEnclosingElementByKind(element, ElementKind.CLASS);
+        return t.getQualifiedName().toString();
+    }
+
     /**
      * Returns the qualified name of a class within its package. For a regular class, this will be
-     * "ClassName"; for an inner class it will be "ClassName$Inner".
+     * "ClassName"; for an inner class it will be "ClassName.Inner".
      */
-    private String getClass(Element element) {
-        TypeElement t = getEnclosingElementByKind(element, ElementKind.CLASS);
-        if (t == null) {
-            throw new UnsupportedOperationException("Element " + element + " is not in a class");
-        }
+    private String getClassName(TypeElement t) {
         List<String> classes = new ArrayList<>();
         while (t != null) {
             classes.add(t.getSimpleName().toString());
             t = getEnclosingElementByKind(t.getEnclosingElement(), ElementKind.CLASS);
         }
-        return Joiner.on("$").join(Lists.reverse(classes));
+        return Joiner.on(".").join(Lists.reverse(classes));
     }
 
-    private String getPackage(Element element) {
-        PackageElement p = getEnclosingElementByKind(element, ElementKind.PACKAGE);
-        if (p == null) {
-            throw new UnsupportedOperationException("Element " + element + " is not in a package");
-        }
-        return p.getQualifiedName().toString();
+    private String getSourcePosition(Element e, AnnotationMirror a) {
+        JavacElements javacElem = (JavacElements) processingEnv.getElementUtils();
+        Pair<JCTree, JCTree.JCCompilationUnit> pair = javacElem.getTreeAndTopLevel(e, a, null);
+        Position.LineMap lines = pair.snd.lineMap;
+        return String.format("%s:%d", pair.snd.getSourceFile().getName(),
+                lines.getLineNumber(pair.fst.pos().getStartPosition()));
     }
 
     private Change createChange(Element e, Messager messager, String comment) {
-        Long id = (Long) ((VariableElement) e).getConstantValue();
-        String name = e.getSimpleName().toString();
-        boolean disabled = false;
-        Integer enabledAfter = null;
+        Change.Builder builder = new Change.Builder()
+                .id((Long) ((VariableElement) e).getConstantValue())
+                .name(e.getSimpleName().toString());
 
+        AnnotationMirror changeId = null;
         for (AnnotationMirror m : e.getAnnotationMirrors()) {
             String type =
                     ((TypeElement) m.getAnnotationType().asElement()).getQualifiedName().toString();
             if (type.equals(DISABLED_CLASS_NAME)) {
-                disabled = true;
+                builder.disabled();
             } else if (type.equals(ENABLED_AFTER_CLASS_NAME)) {
                 for (Map.Entry<?, ?> entry : m.getElementValues().entrySet()) {
                     String key = ((ExecutableElement) entry.getKey()).getSimpleName().toString();
                     if (key.equals(TARGET_SDK_VERSION)) {
-                        enabledAfter = (Integer) ((AnnotationValue) entry.getValue()).getValue();
+                        builder.enabledAfter(
+                                (Integer) ((AnnotationValue) entry.getValue()).getValue());
                     }
                 }
+            } else if (type.equals(SUPPORTED_ANNOTATION)) {
+                changeId = m;
             }
         }
 
-        String description = null;
         if (comment != null) {
-            description = JAVADOC_SANITIZER.matcher(comment).replaceAll("").replaceAll("\\n",
-                    " ").trim();
+            builder.description(
+                    JAVADOC_SANITIZER.matcher(comment).replaceAll("").replaceAll("\\n"," ").trim());
         }
+        TypeElement cls = getEnclosingElementByKind(e, ElementKind.CLASS);
+        PackageElement pkg = getEnclosingElementByKind(cls, ElementKind.PACKAGE);
+        Change change = builder.javaClass(getClassName(cls))
+                .javaPackage(pkg.getQualifiedName().toString())
+                .qualifedClass(cls.getQualifiedName().toString())
+                .sourcePosition(getSourcePosition(e, changeId))
+                .build();
 
-        if (disabled && enabledAfter != null) {
+
+        if (change.disabled && change.enabledAfter != null) {
             messager.printMessage(
                     ERROR,
                     "ChangeId cannot be annotated with both @Disabled and @EnabledAfter.",
                     e);
         }
-        return new Change(id, name, disabled, enabledAfter, description, getPackage(e), getClass(e));
+
+        return change;
     }
 }
