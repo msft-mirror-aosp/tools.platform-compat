@@ -20,4 +20,12 @@ python_test_host {
         "process_compat_config.py",
     ],
     test_suites: ["general-tests"],
+    version: {
+        py2: {
+            enabled: true,
+        },
+        py3: {
+            enabled: false,
+        },
+    },
 }
