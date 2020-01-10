@@ -20,37 +20,81 @@ XML file.
 """
 
 import argparse
+import collections
 import sys
 import xml.etree.ElementTree as ET
 from zipfile import ZipFile
+
+XmlContent = collections.namedtuple('XmlContent', ['xml', 'source'])
 
 def extract_compat_config(jarfile):
     """
     Reads all compat_config.xml files from a jarfile.
 
-    Yields: open filehandles for each XML file found.
+    Yields: XmlContent for each XML file found.
     """
     with ZipFile(jarfile, 'r') as jar:
         for info in jar.infolist():
             if info.filename.endswith("_compat_config.xml"):
                 with jar.open(info.filename, 'r') as xml:
-                    yield xml
+                    yield XmlContent(xml, info.filename)
+
+def change_element_tostring(element):
+    s = "%s(%s)" % (element.attrib['name'], element.attrib['id'])
+    metadata = element.find('meta-data')
+    if metadata is not None:
+        s += " defined in class %s at %s" % (metadata.attrib['definedIn'], metadata.attrib['sourcePosition'])
+    return s
+
+class ChangeDefinition(collections.namedtuple('ChangeDefinition', ['source', 'element'])):
+    def __str__(self):
+        return "  From: %s:\n    %s" % (self.source, change_element_tostring(self.element))
 
 class ConfigMerger(object):
 
-    def __init__(self):
+    def __init__(self, detect_conflicts):
         self.tree = ET.ElementTree()
         self.tree._setroot(ET.Element("config"))
+        self.detect_conflicts = detect_conflicts
+        self.changes_by_id = dict()
+        self.changes_by_name = dict()
+        self.errors = 0
+        self.write_errors_to = sys.stderr
 
-    def merge(self, xmlFile):
+    def merge(self, xmlFile, source):
         xml = ET.parse(xmlFile)
         for child in xml.getroot():
+            if self.detect_conflicts:
+                id = child.attrib['id']
+                name = child.attrib['name']
+                this_change = ChangeDefinition(source, child)
+                if id in self.changes_by_id.keys():
+                    duplicate = self.changes_by_id[id]
+                    self.write_errors_to.write(
+                        "ERROR: Duplicate definitions for compat change with ID %s:\n%s\n%s\n" % (
+                        id, duplicate, this_change))
+                    self.errors += 1
+                if name in self.changes_by_name.keys():
+                    duplicate = self.changes_by_name[name]
+                    self.write_errors_to.write(
+                        "ERROR: Duplicate definitions for compat change with name %s:\n%s\n%s\n" % (
+                        name, duplicate, this_change))
+                    self.errors += 1
+
+                self.changes_by_id[id] = this_change
+                self.changes_by_name[name] = this_change
             self.tree.getroot().append(child)
 
+    def _check_error(self):
+        if self.errors > 0:
+            raise Exception("Failed due to %d earlier errors" % self.errors)
+
     def write(self, filename):
+        self._check_error()
         self.tree.write(filename, encoding='utf-8', xml_declaration=True)
 
     def write_device_config(self, filename):
+        self._check_error()
         self.strip_config_for_device().write(filename, encoding='utf-8', xml_declaration=True)
 
     def strip_config_for_device(self):
@@ -74,17 +118,19 @@ def main(argv):
         "Meta data not needed on the devivce is stripped from this.")
     parser.add_argument("--merged-config", dest="merged_config", type=argparse.FileType('wb'),
         help="Specify where to write merged config to. This will include metadata.")
+    parser.add_argument("--allow-duplicates", dest="allow_duplicates", action='store_true',
+        help="Allow duplicate changed IDs in the merged config.")
 
     args = parser.parse_args()
 
-    config = ConfigMerger()
+    config = ConfigMerger(detect_conflicts = args.allow_duplicates is None)
     if args.jar:
         for jar in args.jar:
-            for xml in extract_compat_config(jar):
-                config.merge(xml)
+            for xml_content in extract_compat_config(jar):
+                config.merge(xml_content.xml, "%s:%s" % (jar.name, xml_content.source))
     if args.xml:
         for xml in args.xml:
-            config.merge(xml)
+            config.merge(xml, xml.name)
 
     if args.device_config:
         config.write_device_config(args.device_config)
