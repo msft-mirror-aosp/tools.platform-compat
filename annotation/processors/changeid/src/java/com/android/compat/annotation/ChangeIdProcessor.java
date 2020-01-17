@@ -77,6 +77,7 @@ public class ChangeIdProcessor extends AbstractProcessor {
     private static final String TARGET_SDK_VERSION = "targetSdkVersion";
 
     private static final Pattern JAVADOC_SANITIZER = Pattern.compile("^\\s", Pattern.MULTILINE);
+    private static final Pattern HIDE_TAG_MATCHER = Pattern.compile("(\\s|^)@hide(\\s|$)");
 
     /**
      * Used as a map key when sharding by classname.
@@ -289,8 +290,9 @@ public class ChangeIdProcessor extends AbstractProcessor {
         }
 
         if (comment != null) {
-            builder.description(
-                    JAVADOC_SANITIZER.matcher(comment).replaceAll("").replaceAll("\\n"," ").trim());
+            comment = HIDE_TAG_MATCHER.matcher(comment).replaceAll("");
+            comment = JAVADOC_SANITIZER.matcher(comment).replaceAll("");
+            builder.description(comment.replaceAll("\\n"," ").trim());
         }
         TypeElement cls = getEnclosingElementByKind(e, ElementKind.CLASS);
         PackageElement pkg = getEnclosingElementByKind(cls, ElementKind.PACKAGE);
