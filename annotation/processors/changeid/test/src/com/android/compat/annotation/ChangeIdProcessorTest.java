@@ -355,4 +355,39 @@ public class ChangeIdProcessorTest {
         CompilationSubject.assertThat(compilation).hadErrorContaining(
                 "Non static variable MY_CHANGE_ID annotated with @ChangeId.");
     }
+
+    @Test
+    public void testCompatConfigXmlOutput_hideTag() {
+        JavaFileObject[] source = {
+                JavaFileObjects.forSourceLines(
+                        "libcore.util.Compat",
+                        "package libcore.util;",
+                        "import android.compat.annotation.ChangeId;",
+                        "import android.compat.annotation.EnabledAfter;",
+                        "import android.compat.annotation.Disabled;",
+                        "public class Compat {",
+                        "    public class Inner {",
+                        "        /**",
+                        "        * description of MY_CHANGE_ID.",
+                        "        * @hide",
+                        "        */",
+                        "        @ChangeId",
+                        "        static final long MY_CHANGE_ID = 123456789l;",
+                        "    }",
+                        "}"),
+        };
+        String expectedFile = HEADER + "<config>" +
+                "<compat-change description=\"description of MY_CHANGE_ID.\" "
+                + "id=\"123456789\" name=\"MY_CHANGE_ID\"><meta-data definedIn=\"libcore.util"
+                + ".Compat.Inner\" sourcePosition=\"libcore/util/Compat.java:11\"/>"
+                + "</compat-change></config>";
+        Compilation compilation =
+                Compiler.javac()
+                        .withProcessors(new ChangeIdProcessor())
+                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+        CompilationSubject.assertThat(compilation).succeeded();
+        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
+                "Compat.Inner_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
+    }
+
 }
