@@ -46,4 +46,5 @@ java_library {
         "UnsupportedAppUsage.java",
     ],
     sdk_version: "core_current",
+    exported_plugins: ["unsupportedappusage-annotation-processor"],
 }
