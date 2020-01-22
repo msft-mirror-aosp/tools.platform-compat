@@ -49,11 +49,7 @@ import javax.tools.Diagnostic;
  * with @UnsupportedAppUsage to corresponding source positions for their UnsupportedAppUsage
  * annotaion.
  */
-@SupportedAnnotationTypes({
-        "android.annotation.UnsupportedAppUsage",
-        "android.compat.annotation.UnsupportedAppUsage",
-        "dalvik.annotation.compat.UnsupportedAppUsage",
-})
+@SupportedAnnotationTypes({"android.compat.annotation.UnsupportedAppUsage"})
 public class UnsupportedAppUsageProcessor extends AbstractProcessor {
 
     // Package name for writing output. Output will be written to the "class output" location within
