@@ -14,48 +14,6 @@
  * limitations under the License.
  */
 
-java_library_host {
-    name: "compat-changeid-annotation-processor-lib",
-
-    srcs: [
-        "Change.java",
-        "ChangeIdProcessor.java",
-        "XmlWriter.java",
-    ],
-
-    static_libs: [
-        "guava",
-    ],
-
-    openjdk9: {
-        javacflags: [
-            "--add-modules=jdk.compiler",
-            "--add-exports jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
-            "--add-exports jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED",
-            "--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
-            "--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-        ],
-    },
-}
-
-java_plugin {
-    name: "compat-changeid-annotation-processor",
-    processor_class: "com.android.compat.annotation.ChangeIdProcessor",
-
-    visibility: ["//visibility:public"],
-
-    java_resources: [
-        "META-INF/**/*",
-    ],
-
-    static_libs: [
-        "compat-changeid-annotation-processor-lib",
-    ],
-    installable: false,
-
-    use_tools_jar: true,
-}
-
 java_library {
     name: "app-compat-annotations",
     host_supported: true,
