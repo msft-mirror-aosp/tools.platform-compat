@@ -37,12 +37,12 @@ java_library_host {
         ],
     },
 
-    visibility: ["//tools/platform-compat/javatest/android/processor/changeid:__subpackages__"],
+    visibility: ["//tools/platform-compat/javatest/android/processor/compat/changeid:__subpackages__"],
 }
 
 java_plugin {
     name: "compat-changeid-annotation-processor",
-    processor_class: "android.processor.changeid.ChangeIdProcessor",
+    processor_class: "android.processor.compat.changeid.ChangeIdProcessor",
 
     visibility: ["//visibility:public"],
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.processor.unsupportedappusage;
+package android.processor.compat.unsupportedappusage;
 
 import static com.google.common.truth.Truth.assertThat;
 
