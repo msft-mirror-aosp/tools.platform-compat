@@ -80,6 +80,7 @@ filegroup {
 
 java_library {
     name: "unsupportedappusage",
+    host_supported: true,
     srcs: [
         "UnsupportedAppUsage.java",
     ],
