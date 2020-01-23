@@ -14,34 +14,24 @@
  * limitations under the License.
  */
 
-python_binary_host {
-    name: "process-compat-config",
-    main: "process_compat_config.py",
-    srcs: ["process_compat_config.py"],
-    version: {
-        py2: {
-            enabled: true,
-        },
-        py3: {
-            enabled: false,
-        },
-    },
-}
+java_test_host {
+    name: "compat-changeid-annotation-processor-test",
 
-python_test_host {
-    name: "process-compat-config-test",
-    main: "process-compat-config-test.py",
     srcs: [
-        "process_compat_config.py",
-        "process-compat-config-test.py",
+        "ChangeIdProcessorTest.java",
+        "XmlWriterTest.java",
     ],
-    test_suites: ["general-tests"],
-    version: {
-        py2: {
-            enabled: true,
-        },
-        py3: {
-            enabled: false,
-        },
-    },
+
+    static_libs: [
+        "compat-changeid-annotation-processor-lib",
+        "compile-testing-prebuilt",
+        "junit-host",
+        "mockito-host",
+        "objenesis-host",
+        "truth-prebuilt",
+    ],
+
+    test_suites: [
+        "general-tests",
+    ],
 }
