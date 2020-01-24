@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.compat.annotation;
+package android.processor.changeid;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
