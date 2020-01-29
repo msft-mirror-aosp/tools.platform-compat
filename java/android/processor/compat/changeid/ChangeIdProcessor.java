@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.processor.changeid;
+package android.processor.compat.changeid;
 
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
