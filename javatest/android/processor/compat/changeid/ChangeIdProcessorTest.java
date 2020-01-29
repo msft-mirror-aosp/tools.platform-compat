@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.processor.changeid;
+package android.processor.compat.changeid;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -117,7 +117,7 @@ public class ChangeIdProcessorTest {
     }
 
     @Test
-    public void testCompatConfigXmlOutput_mutliplePackages() {
+    public void testCompatConfigXmlOutput_multiplePackages() {
         JavaFileObject[] source = {
                 JavaFileObjects.forSourceLines(
                         "libcore.util.Compat",

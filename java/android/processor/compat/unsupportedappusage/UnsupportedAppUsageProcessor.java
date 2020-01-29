@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package android.processor.unsupportedappusage;
+package android.processor.compat.unsupportedappusage;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
