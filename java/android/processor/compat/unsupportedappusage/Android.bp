@@ -32,12 +32,13 @@ java_library_host {
             "--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
         ],
     },
-    visibility: ["//tools/platform-compat/javatest/android/processor/unsupportedappusage:__subpackages__"],
+
+    visibility: ["//tools/platform-compat/javatest/android/processor/compat/unsupportedappusage:__subpackages__"],
 }
 
 java_plugin {
     name: "unsupportedappusage-annotation-processor",
-    processor_class: "android.processor.unsupportedappusage.UnsupportedAppUsageProcessor",
+    processor_class: "android.processor.compat.unsupportedappusage.UnsupportedAppUsageProcessor",
 
     java_resources: [
        "META-INF/**/*",

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.processor.changeid;
+package android.processor.compat.changeid;
 
 import static org.hamcrest.core.StringStartsWith.startsWith;
 import static org.junit.Assert.assertThat;

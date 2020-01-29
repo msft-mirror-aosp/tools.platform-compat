@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package android.processor.unsupportedappusage;
+package android.processor.compat.unsupportedappusage;
 
 import com.google.common.base.Splitter;
 
