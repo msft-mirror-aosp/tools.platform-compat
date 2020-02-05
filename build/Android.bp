@@ -45,3 +45,9 @@ python_test_host {
         },
     },
 }
+
+global_compat_config {
+    name: "global-compat-config",
+    filename: "all_compat_config.xml",
+}
+
