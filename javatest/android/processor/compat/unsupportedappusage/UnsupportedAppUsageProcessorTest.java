@@ -131,7 +131,7 @@ public class UnsupportedAppUsageProcessorTest {
         CompilationSubject.assertThat(compilation).failed();
         CompilationSubject.assertThat(compilation).hadErrorContaining(
                 "Expected overrideSourcePosition to have format "
-                        + "file:startLine:startCol:endLine:endCol").inFile(src).onLine(4);
+                        + "string:int:int:int:int").inFile(src).onLine(4);
     }
 
     @Test
@@ -148,7 +148,8 @@ public class UnsupportedAppUsageProcessorTest {
                         .compile(ANNOTATION, src);
         CompilationSubject.assertThat(compilation).failed();
         CompilationSubject.assertThat(compilation).hadErrorContaining(
-                "error parsing integer").inFile(src).onLine(4);
+                "Expected overrideSourcePosition to have format "
+                        + "string:int:int:int:int").inFile(src).onLine(4);
     }
 
     @Test

@@ -102,6 +102,12 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
         TypeElement annotation = Iterables.getOnlyElement(annotations);
 
         for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(annotation)) {
+            AnnotationMirror annotationMirror =
+                    getUnsupportedAppUsageAnnotationMirror(annotation, annotatedElement);
+            if (hasElement(annotationMirror, "implicitMember")) {
+                // Implicit member refers to member not present in code, ignore.
+                continue;
+            }
             String signature = signatureConverter.getSignature(
                     types, annotation, annotatedElement);
             if (signature != null) {
@@ -244,6 +250,11 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
         }
 
         return parameterValue.replace(':', ',');
+    }
+
+    private boolean hasElement(AnnotationMirror annotation, String elementName) {
+        return annotation.getElementValues().keySet().stream().anyMatch(
+                key -> elementName.equals(key.getSimpleName().toString()));
     }
 
     private String getProperties(AnnotationMirror annotation) {
