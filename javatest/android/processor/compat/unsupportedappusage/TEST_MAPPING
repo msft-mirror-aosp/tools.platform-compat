@@ -1,8 +1,7 @@
 {
-  "presubmit": [
+  "imports": [
     {
-      "name": "unsupportedappusage-processor-test",
-      "host" : true
+      "path": "java/android/processor/compat/unsupportedappusage"
     }
   ]
 }
