@@ -83,7 +83,7 @@ final class SignatureConverter {
             return verifyExpectedSignature(types, signature, element, annotation);
         } catch (SignatureConverterException problem) {
             messager.printMessage(ERROR, problem.getMessage(), element);
-            throw new RuntimeException(problem);
+            return null;
         }
     }
 
@@ -222,7 +222,7 @@ final class SignatureConverter {
             }
         }
         if (annotationMirror == null) {
-            throw new IllegalStateException(
+            throw new SignatureConverterException(
                     "Element doesn't have any UnsupportedAppUsage annotation");
         }
         String expectedSignature = annotationMirror.getElementValues().entrySet().stream()
