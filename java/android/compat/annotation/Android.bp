@@ -26,6 +26,7 @@ java_library {
     sdk_version: "current",
 }
 
+// Don't forget to depend on exported_plugins, if using sources directly
 filegroup {
     name: "app-compat-annotations-source",
     srcs: [
