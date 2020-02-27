@@ -1,8 +1,7 @@
 {
-  "presubmit": [
+  "imports": [
     {
-      "name": "compat-changeid-annotation-processor-test",
-      "host" : true
+      "path": "java/android/processor/compat/changeid"
     }
   ]
 }
