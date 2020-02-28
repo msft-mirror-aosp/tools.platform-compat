@@ -154,9 +154,17 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
                     String signature = signatureConverter.getSignature(
                             types, annotation, annotatedElement);
                     if (signature != null) {
-                        content.add(getAnnotationIndex(signature, annotation, annotatedElement));
-                        signatureMap.put(signature, annotatedElement);
+                        String annotationIndex = getAnnotationIndex(signature, annotation,
+                                annotatedElement);
+                        if (annotationIndex != null) {
+                            content.add(annotationIndex);
+                            signatureMap.put(signature, annotatedElement);
+                        }
                     }
+                }
+
+                if (content.isEmpty()) {
+                    continue;
                 }
 
                 try {
@@ -242,6 +250,9 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
         String position = getSourcePositionOverride(element, annotationMirror);
         if (position == null) {
             position = getSourcePosition(element, annotationMirror);
+            if (position == null) {
+                return null;
+            }
         }
         return Joiner.on(",").join(
                 signature,
@@ -265,6 +276,9 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
 
     private String getSourcePosition(Element element, AnnotationMirror annotationMirror) {
         TreePath path = trees.getPath(element, annotationMirror);
+        if (path == null) {
+            return null;
+        }
         CompilationUnitTree compilationUnit = path.getCompilationUnit();
         Tree tree = path.getLeaf();
         long startPosition = sourcePositions.getStartPosition(compilationUnit, tree);
