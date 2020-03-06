@@ -201,6 +201,71 @@ public class ChangeIdProcessorTest {
     }
 
     @Test
+    public void testCompatConfigXmlOutput_interface() {
+        JavaFileObject[] source = {
+                JavaFileObjects.forSourceLines(
+                        "libcore.util.Compat",
+                        "package libcore.util;",
+                        "import android.compat.annotation.ChangeId;",
+                        "import android.compat.annotation.EnabledAfter;",
+                        "import android.compat.annotation.Disabled;",
+                        "public interface Compat {",
+                        "    /**",
+                        "     * description of",
+                        "     * MY_CHANGE_ID",
+                        "     */",
+                        "    @ChangeId",
+                        "    static final long MY_CHANGE_ID = 123456789l;",
+                        "}"),
+        };
+        String expectedFile = HEADER + "<config>" +
+                "<compat-change description=\"description of MY_CHANGE_ID\" "
+                + "id=\"123456789\" name=\"MY_CHANGE_ID\"><meta-data definedIn=\"libcore.util"
+                + ".Compat\" sourcePosition=\"libcore/util/Compat.java:10\"/>"
+                + "</compat-change></config>";
+        Compilation compilation =
+                Compiler.javac()
+                        .withProcessors(new ChangeIdProcessor())
+                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+        CompilationSubject.assertThat(compilation).succeeded();
+        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
+                "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
+    }
+
+    @Test
+    public void testCompatConfigXmlOutput_enum() {
+        JavaFileObject[] source = {
+                JavaFileObjects.forSourceLines(
+                        "libcore.util.Compat",
+                        "package libcore.util;",
+                        "import android.compat.annotation.ChangeId;",
+                        "import android.compat.annotation.EnabledAfter;",
+                        "import android.compat.annotation.Disabled;",
+                        "public enum Compat {",
+                        "    ENUM_CONSTANT;",
+                        "    /**",
+                        "     * description of",
+                        "     * MY_CHANGE_ID",
+                        "     */",
+                        "    @ChangeId",
+                        "    private static final long MY_CHANGE_ID = 123456789l;",
+                        "}"),
+        };
+        String expectedFile = HEADER + "<config>" +
+                "<compat-change description=\"description of MY_CHANGE_ID\" "
+                + "id=\"123456789\" name=\"MY_CHANGE_ID\"><meta-data definedIn=\"libcore.util"
+                + ".Compat\" sourcePosition=\"libcore/util/Compat.java:11\"/>"
+                + "</compat-change></config>";
+        Compilation compilation =
+                Compiler.javac()
+                        .withProcessors(new ChangeIdProcessor())
+                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+        CompilationSubject.assertThat(compilation).succeeded();
+        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
+                "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
+    }
+
+    @Test
     public void testBothDisabledAndEnabledAfter() {
         JavaFileObject[] source = {
                 JavaFileObjects.forSourceLines(
