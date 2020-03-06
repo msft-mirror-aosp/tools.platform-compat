@@ -73,6 +73,7 @@ public class ChangeIdProcessor extends AbstractProcessor {
             "android.compat.annotation.ChangeId";
 
     private static final String DISABLED_CLASS_NAME = "android.compat.annotation.Disabled";
+    private static final String LOGGING_CLASS_NAME = "android.compat.annotation.LoggingOnly";
     private static final String ENABLED_AFTER_CLASS_NAME = "android.compat.annotation.EnabledAfter";
     private static final String TARGET_SDK_VERSION = "targetSdkVersion";
 
@@ -276,6 +277,8 @@ public class ChangeIdProcessor extends AbstractProcessor {
                     ((TypeElement) m.getAnnotationType().asElement()).getQualifiedName().toString();
             if (type.equals(DISABLED_CLASS_NAME)) {
                 builder.disabled();
+            } else if (type.equals(LOGGING_CLASS_NAME)) {
+                builder.loggingOnly();
             } else if (type.equals(ENABLED_AFTER_CLASS_NAME)) {
                 for (Map.Entry<?, ?> entry : m.getElementValues().entrySet()) {
                     String key = ((ExecutableElement) entry.getKey()).getSimpleName().toString();
@@ -307,6 +310,14 @@ public class ChangeIdProcessor extends AbstractProcessor {
             messager.printMessage(
                     ERROR,
                     "ChangeId cannot be annotated with both @Disabled and @EnabledAfter.",
+                    e);
+        }
+
+        if (change.loggingOnly && (change.disabled || change.enabledAfter != null)) {
+            messager.printMessage(
+                    ERROR,
+                    "ChangeId cannot be annotated with both @LoggingOnly and @EnabledAfter or "
+                            + "@Disabled.",
                     e);
         }
 
