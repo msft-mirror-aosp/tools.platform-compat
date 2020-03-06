@@ -84,11 +84,17 @@ public class XmlWriterTest {
                 .disabled()
                 .enabledAfter(29)
                 .build();
+        Change loggingOnly = new Change.Builder()
+                .id(555L)
+                .name("change-name5")
+                .loggingOnly()
+                .build();
 
         writer.addChange(c);
         writer.addChange(disabled);
         writer.addChange(sdkRestricted);
         writer.addChange(both);
+        writer.addChange(loggingOnly);
         writer.write(mOutputStream);
 
         String expected = HEADER + "<config>"
@@ -98,6 +104,7 @@ public class XmlWriterTest {
                 + "name=\"change-name3\"/>"
                 + "<compat-change disabled=\"true\" enableAfterTargetSdk=\"29\" id=\"444\" "
                 + "name=\"change-name4\"/>"
+                + "<compat-change id=\"555\" loggingOnly=\"true\" name=\"change-name5\"/>"
                 + "</config>";
 
         assertThat(mOutputStream.toString(), startsWith(expected));
