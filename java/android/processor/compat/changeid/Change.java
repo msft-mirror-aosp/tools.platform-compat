@@ -26,6 +26,7 @@ public class Change {
     final Long id;
     final String name;
     final boolean disabled;
+    final boolean loggingOnly;
     final Integer enabledAfter;
     final String description;
     /**
@@ -46,12 +47,13 @@ public class Change {
     final String sourcePosition;
 
     @VisibleForTesting
-    public Change(Long id, String name, boolean disabled, Integer enabledAfter,
+    public Change(Long id, String name, boolean disabled, boolean loggingOnly, Integer enabledAfter,
             String description, String javaPackage, String className, String qualifiedClass,
             String sourcePosition) {
         this.id = id;
         this.name = name;
         this.disabled = disabled;
+        this.loggingOnly = loggingOnly;
         this.enabledAfter = enabledAfter;
         this.description = description;
         this.javaPackage = javaPackage;
@@ -64,6 +66,7 @@ public class Change {
         Long id;
         String name;
         boolean disabled;
+        boolean loggingOnly;
         Integer enabledAfter;
         String description;
         String javaPackage;
@@ -86,6 +89,11 @@ public class Change {
 
         public Builder disabled() {
             this.disabled = true;
+            return this;
+        }
+
+        public Builder loggingOnly() {
+            this.loggingOnly = true;
             return this;
         }
 
@@ -120,7 +128,8 @@ public class Change {
         }
 
         public Change build() {
-            return new Change(id, name, disabled, enabledAfter, description, javaPackage, javaClass,
+            return new Change(id, name, disabled, loggingOnly, enabledAfter, description,
+                    javaPackage, javaClass,
                     qualifiedClass, sourcePosition);
         }
 
