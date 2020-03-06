@@ -58,6 +58,16 @@ public class ChangeIdProcessorTest {
                     "@Target({FIELD})",
                     "public @interface Disabled {",
                     "}"),
+            JavaFileObjects.forSourceLines("android.compat.annotation.LoggingOnly",
+                    "package android.compat.annotation;",
+                    "import static java.lang.annotation.ElementType.FIELD;",
+                    "import static java.lang.annotation.RetentionPolicy.SOURCE;",
+                    "import java.lang.annotation.Retention;",
+                    "import java.lang.annotation.Target;",
+                    "@Retention(SOURCE)",
+                    "@Target({FIELD})",
+                    "public @interface LoggingOnly {",
+                    "}"),
             JavaFileObjects.forSourceLines("android.compat.annotation.EnabledAfter",
                     "package android.compat.annotation;",
                     "import static java.lang.annotation.ElementType.FIELD;",
@@ -216,10 +226,6 @@ public class ChangeIdProcessorTest {
                         "    static final long MY_CHANGE_ID = 123456789l;",
                         "}")
         };
-        String expectedFile = HEADER + "<config>" +
-                "<compat-change disabled=\"true\" enableAfterTargetSdk=\"29\" id=\"123456789\" "
-                + "name=\"MY_CHANGE_ID\"/>" +
-                "</config>";
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
@@ -228,6 +234,84 @@ public class ChangeIdProcessorTest {
                 "ChangeId cannot be annotated with both @Disabled and @EnabledAfter.");
     }
 
+
+    @Test
+    public void testBothLoggingOnlyAndEnabledAfter() {
+        JavaFileObject[] source = {
+                JavaFileObjects.forSourceLines(
+                        "libcore.util.Compat",
+                        "package libcore.util;",
+                        "import android.compat.annotation.ChangeId;",
+                        "import android.compat.annotation.EnabledAfter;",
+                        "import android.compat.annotation.LoggingOnly;",
+                        "public class Compat {",
+                        "    @EnabledAfter(targetSdkVersion=29)",
+                        "    @LoggingOnly",
+                        "    @ChangeId",
+                        "    static final long MY_CHANGE_ID = 123456789l;",
+                        "}")
+        };
+        Compilation compilation =
+                Compiler.javac()
+                        .withProcessors(new ChangeIdProcessor())
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
+        CompilationSubject.assertThat(compilation).hadErrorContaining(
+                "ChangeId cannot be annotated with both @LoggingOnly and @EnabledAfter or "
+                        + "@Disabled.");
+    }
+
+    @Test
+    public void testBothLoggingOnlyAndDisabled() {
+        JavaFileObject[] source = {
+                JavaFileObjects.forSourceLines(
+                        "libcore.util.Compat",
+                        "package libcore.util;",
+                        "import android.compat.annotation.ChangeId;",
+                        "import android.compat.annotation.LoggingOnly;",
+                        "import android.compat.annotation.Disabled;",
+                        "public class Compat {",
+                        "    @LoggingOnly",
+                        "    @Disabled",
+                        "    @ChangeId",
+                        "    static final long MY_CHANGE_ID = 123456789l;",
+                        "}")
+        };
+        Compilation compilation =
+                Compiler.javac()
+                        .withProcessors(new ChangeIdProcessor())
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
+        CompilationSubject.assertThat(compilation).hadErrorContaining(
+                "ChangeId cannot be annotated with both @LoggingOnly and @EnabledAfter or "
+                        + "@Disabled.");
+    }
+
+    @Test
+    public void testLoggingOnly() {
+        JavaFileObject[] source = {
+                JavaFileObjects.forSourceLines(
+                        "libcore.util.Compat",
+                        "package libcore.util;",
+                        "import android.compat.annotation.ChangeId;",
+                        "import android.compat.annotation.LoggingOnly;",
+                        "public class Compat {",
+                        "    @LoggingOnly",
+                        "    @ChangeId",
+                        "    static final long MY_CHANGE_ID = 123456789l;",
+                        "}")
+        };
+        String expectedFile = HEADER + "<config>" +
+                "<compat-change id=\"123456789\" loggingOnly=\"true\" name=\"MY_CHANGE_ID\">" +
+                "<meta-data definedIn=\"libcore.util.Compat\" " +
+                "sourcePosition=\"libcore/util/Compat.java:6\"/>" +
+                "</compat-change></config>";
+        Compilation compilation =
+                Compiler.javac()
+                        .withProcessors(new ChangeIdProcessor())
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
+        CompilationSubject.assertThat(compilation).succeeded();
+        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
+                "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
+    }
     @Test
     public void testIgnoredParams() {
         JavaFileObject[] source = {
