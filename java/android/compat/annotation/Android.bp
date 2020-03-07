@@ -21,6 +21,7 @@ java_library {
         "ChangeId.java",
         "Disabled.java",
         "EnabledAfter.java",
+        "LoggingOnly.java",
     ],
     // Allow core_current to use the annotations.
     sdk_version: "current",
@@ -33,6 +34,7 @@ filegroup {
         "ChangeId.java",
         "Disabled.java",
         "EnabledAfter.java",
+        "LoggingOnly.java",
         "UnsupportedAppUsage.java",
     ],
 }
