@@ -49,6 +49,7 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
@@ -73,6 +74,7 @@ public class ChangeIdProcessor extends AbstractProcessor {
             "android.compat.annotation.ChangeId";
 
     private static final String DISABLED_CLASS_NAME = "android.compat.annotation.Disabled";
+    private static final String LOGGING_CLASS_NAME = "android.compat.annotation.LoggingOnly";
     private static final String ENABLED_AFTER_CLASS_NAME = "android.compat.annotation.EnabledAfter";
     private static final String TARGET_SDK_VERSION = "targetSdkVersion";
 
@@ -232,31 +234,6 @@ public class ChangeIdProcessor extends AbstractProcessor {
         return true;
     }
 
-    private static <E extends Element> E getEnclosingElementByKind(Element element, ElementKind kind) {
-        while (element != null && element.getKind() != kind) {
-            element = element.getEnclosingElement();
-        }
-        return (E) element;
-    }
-
-    private String getQualifiedClass(Element element){
-        TypeElement t = getEnclosingElementByKind(element, ElementKind.CLASS);
-        return t.getQualifiedName().toString();
-    }
-
-    /**
-     * Returns the qualified name of a class within its package. For a regular class, this will be
-     * "ClassName"; for an inner class it will be "ClassName.Inner".
-     */
-    private String getClassName(TypeElement t) {
-        List<String> classes = new ArrayList<>();
-        while (t != null) {
-            classes.add(t.getSimpleName().toString());
-            t = getEnclosingElementByKind(t.getEnclosingElement(), ElementKind.CLASS);
-        }
-        return Joiner.on(".").join(Lists.reverse(classes));
-    }
-
     private String getSourcePosition(Element e, AnnotationMirror a) {
         JavacElements javacElem = (JavacElements) processingEnv.getElementUtils();
         Pair<JCTree, JCTree.JCCompilationUnit> pair = javacElem.getTreeAndTopLevel(e, a, null);
@@ -276,6 +253,8 @@ public class ChangeIdProcessor extends AbstractProcessor {
                     ((TypeElement) m.getAnnotationType().asElement()).getQualifiedName().toString();
             if (type.equals(DISABLED_CLASS_NAME)) {
                 builder.disabled();
+            } else if (type.equals(LOGGING_CLASS_NAME)) {
+                builder.loggingOnly();
             } else if (type.equals(ENABLED_AFTER_CLASS_NAME)) {
                 for (Map.Entry<?, ?> entry : m.getElementValues().entrySet()) {
                     String key = ((ExecutableElement) entry.getKey()).getSimpleName().toString();
@@ -294,14 +273,17 @@ public class ChangeIdProcessor extends AbstractProcessor {
             comment = JAVADOC_SANITIZER.matcher(comment).replaceAll("");
             builder.description(comment.replaceAll("\\n"," ").trim());
         }
-        TypeElement cls = getEnclosingElementByKind(e, ElementKind.CLASS);
-        PackageElement pkg = getEnclosingElementByKind(cls, ElementKind.PACKAGE);
-        Change change = builder.javaClass(getClassName(cls))
-                .javaPackage(pkg.getQualifiedName().toString())
-                .qualifedClass(cls.getQualifiedName().toString())
+
+        // TODO(satayev): move common processors code to android.processor.compat.
+        String packageName = processingEnv.getElementUtils().getPackageOf(e).toString();
+        String enclosingElementName = ((QualifiedNameable) e.getEnclosingElement()).getQualifiedName().toString();
+        String className = enclosingElementName.substring(packageName.length() + 1);
+
+        Change change = builder.javaClass(className)
+                .javaPackage(packageName)
+                .qualifedClass(enclosingElementName)
                 .sourcePosition(getSourcePosition(e, changeId))
                 .build();
-
 
         if (change.disabled && change.enabledAfter != null) {
             messager.printMessage(
@@ -310,6 +292,15 @@ public class ChangeIdProcessor extends AbstractProcessor {
                     e);
         }
 
+        if (change.loggingOnly && (change.disabled || change.enabledAfter != null)) {
+            messager.printMessage(
+                    ERROR,
+                    "ChangeId cannot be annotated with both @LoggingOnly and @EnabledAfter or "
+                            + "@Disabled.",
+                    e);
+        }
+
         return change;
     }
+
 }
