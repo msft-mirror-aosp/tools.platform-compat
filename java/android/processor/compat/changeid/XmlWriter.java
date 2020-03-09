@@ -41,7 +41,7 @@ import javax.xml.transform.stream.StreamResult;
  *     <compat-change id="111" name="change-name1">
  *         <meta-data definedIn="java.package.ClassName" sourcePosition="java/package/ClassName.java:10" />
  *     </compat-change>
- *     <compat-change disabled="true" id="222" name="change-name2" description="my change">
+ *     <compat-change disabled="true" id="222" loggingOnly= "true" name="change-name2" description="my change">
  *         <meta-data .../>
  *     </compat-change>
  *     <compat-change enableAfterTargetSdk="28" id="333" name="change-name3">
@@ -64,6 +64,7 @@ public final class XmlWriter {
     private static final String XML_NAME_ATTR = "name";
     private static final String XML_ID_ATTR = "id";
     private static final String XML_DISABLED_ATTR = "disabled";
+    private static final String XML_LOGGING_ATTR = "loggingOnly";
     private static final String XML_ENABLED_AFTER_ATTR = "enableAfterTargetSdk";
     private static final String XML_DESCRIPTION_ATTR = "description";
     private static final String XML_METADATA_ELEMENT = "meta-data";
@@ -87,6 +88,9 @@ public final class XmlWriter {
         newElement.setAttribute(XML_ID_ATTR, change.id.toString());
         if (change.disabled) {
             newElement.setAttribute(XML_DISABLED_ATTR, "true");
+        }
+        if (change.loggingOnly) {
+            newElement.setAttribute(XML_LOGGING_ATTR, "true");
         }
         if (change.enabledAfter != null) {
             newElement.setAttribute(XML_ENABLED_AFTER_ATTR, change.enabledAfter.toString());
