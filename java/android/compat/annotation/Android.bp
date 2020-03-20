@@ -23,8 +23,7 @@ java_library {
         "EnabledAfter.java",
         "LoggingOnly.java",
     ],
-    // Allow core_current to use the annotations.
-    sdk_version: "current",
+    sdk_version: "core_current",
 }
 
 filegroup {
