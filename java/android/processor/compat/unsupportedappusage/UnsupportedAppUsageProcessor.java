@@ -15,10 +15,14 @@
  */
 package android.processor.compat.unsupportedappusage;
 
+import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Table;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.tree.Tree;
@@ -30,6 +34,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -49,9 +55,12 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
+import javax.tools.FileObject;
 
 /**
  * Annotation processor for {@code UnsupportedAppUsage} annotation.
@@ -69,10 +78,27 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
     private static final String PACKAGE = "unsupportedappusage";
     private static final String INDEX_CSV = "unsupportedappusage_index.csv";
 
+    private static final String GENERATED_INDEX_FILE_EXTENSION = ".uau";
+
     private static final String OVERRIDE_SOURCE_POSITION_PROPERTY = "overrideSourcePosition";
     private static final Pattern OVERRIDE_SOURCE_POSITION_PROPERTY_PATTERN = Pattern.compile(
             "^[^:]+:\\d+:\\d+:\\d+:\\d+$");
 
+    /**
+     * CSV header line for the columns returned by {@link #getAnnotationIndex(String, TypeElement,
+     * Element)}.
+     */
+    private static final String CSV_HEADER = Joiner.on(',').join(
+            "signature",
+            "file",
+            "startline",
+            "startcol",
+            "endline",
+            "endcol",
+            "properties"
+    );
+
+    private Elements elements;
     private Messager messager;
     private SourcePositions sourcePositions;
     private Trees trees;
@@ -81,6 +107,7 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
     public synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
 
+        this.elements = processingEnv.getElementUtils();
         this.messager = processingEnv.getMessager();
         this.trees = Trees.instance(processingEnv);
         this.types = processingEnv.getTypeUtils();
@@ -97,9 +124,9 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
             return true;
         }
 
-        Map<String, Element> signatureMap = new TreeMap<>();
         SignatureConverter signatureConverter = new SignatureConverter(messager);
         TypeElement annotation = Iterables.getOnlyElement(annotations);
+        Table<PackageElement, String, List<Element>> annotatedElements = HashBasedTable.create();
 
         for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(annotation)) {
             AnnotationMirror annotationMirror =
@@ -108,17 +135,59 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
                 // Implicit member refers to member not present in code, ignore.
                 continue;
             }
-            String signature = signatureConverter.getSignature(
-                    types, annotation, annotatedElement);
-            if (signature != null) {
-                signatureMap.put(signature, annotatedElement);
+            PackageElement packageElement = elements.getPackageOf(annotatedElement);
+            String enclosingElementName = getEnclosingElementName(annotatedElement);
+            Preconditions.checkNotNull(packageElement);
+            Preconditions.checkNotNull(enclosingElementName);
+            if (!annotatedElements.contains(packageElement, enclosingElementName)) {
+                annotatedElements.put(packageElement, enclosingElementName, new ArrayList<>());
+            }
+            annotatedElements.get(packageElement, enclosingElementName).add(annotatedElement);
+        }
+
+        Map<String, Element> signatureMap = new TreeMap<>();
+        for (PackageElement packageElement : annotatedElements.rowKeySet()) {
+            Map<String, List<Element>> row = annotatedElements.row(packageElement);
+            for (String enclosingElementName : row.keySet()) {
+                List<String> content = new ArrayList<>();
+                for (Element annotatedElement : row.get(enclosingElementName)) {
+                    String signature = signatureConverter.getSignature(
+                            types, annotation, annotatedElement);
+                    if (signature != null) {
+                        String annotationIndex = getAnnotationIndex(signature, annotation,
+                                annotatedElement);
+                        if (annotationIndex != null) {
+                            content.add(annotationIndex);
+                            signatureMap.put(signature, annotatedElement);
+                        }
+                    }
+                }
+
+                if (content.isEmpty()) {
+                    continue;
+                }
+
+                try {
+                    FileObject resource = processingEnv.getFiler().createResource(
+                            CLASS_OUTPUT,
+                            packageElement.toString(),
+                            enclosingElementName + GENERATED_INDEX_FILE_EXTENSION);
+                    try (PrintStream outputStream = new PrintStream(resource.openOutputStream())) {
+                        outputStream.println(CSV_HEADER);
+                        content.forEach(outputStream::println);
+                    }
+                } catch (IOException exception) {
+                    messager.printMessage(ERROR, "Could not write CSV file: " + exception);
+                    return false;
+                }
             }
         }
 
+        // TODO(satayev): remove merged csv file, after soong starts merging individual csvs.
         if (!signatureMap.isEmpty()) {
             try {
                 writeToFile(INDEX_CSV,
-                        getCsvHeaders(),
+                        CSV_HEADER,
                         signatureMap.entrySet()
                                 .stream()
                                 .map(e -> getAnnotationIndex(e.getKey(), annotation,
@@ -150,19 +219,15 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
     }
 
     /**
-     * Returns a CSV header line for the columns returned by
-     * {@link #getAnnotationIndex(String, TypeElement, Element)}.
+     * Returns a name of an enclosing element without the package name.
+     *
+     * <p>This would return names of all enclosing classes, e.g. <code>Outer.Inner.Foo</code>.
      */
-    private String getCsvHeaders() {
-        return Joiner.on(',').join(
-                "signature",
-                "file",
-                "startline",
-                "startcol",
-                "endline",
-                "endcol",
-                "properties"
-        );
+    private String getEnclosingElementName(Element element) {
+        String fullQualifiedName =
+                ((QualifiedNameable) element.getEnclosingElement()).getQualifiedName().toString();
+        String packageName = elements.getPackageOf(element).toString();
+        return fullQualifiedName.substring(packageName.length() + 1);
     }
 
     /**
@@ -173,8 +238,8 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
      * dex-signature,filename,start-line,start-col,end-line,end-col,properties
      *
      * <p>The positions refer to the annotation itself, *not* the annotated member. This can
-     * therefore be used to read just the annotation from the file, and to perform in-place edits on
-     * it.
+     * therefore be used to read just the annotation from the file, and to perform in-place
+     * edits on it.
      *
      * @return A single line of CSV text
      */
@@ -185,6 +250,9 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
         String position = getSourcePositionOverride(element, annotationMirror);
         if (position == null) {
             position = getSourcePosition(element, annotationMirror);
+            if (position == null) {
+                return null;
+            }
         }
         return Joiner.on(",").join(
                 signature,
@@ -208,6 +276,9 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
 
     private String getSourcePosition(Element element, AnnotationMirror annotationMirror) {
         TreePath path = trees.getPath(element, annotationMirror);
+        if (path == null) {
+            return null;
+        }
         CompilationUnitTree compilationUnit = path.getCompilationUnit();
         Tree tree = path.getLeaf();
         long startPosition = sourcePositions.getStartPosition(compilationUnit, tree);
@@ -243,7 +314,7 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
         String parameterValue = annotationValue.get().getValue().toString();
 
         if (!OVERRIDE_SOURCE_POSITION_PROPERTY_PATTERN.matcher(parameterValue).matches()) {
-            messager.printMessage(Diagnostic.Kind.ERROR, String.format(
+            messager.printMessage(ERROR, String.format(
                     "Expected %s to have format string:int:int:int:int",
                     OVERRIDE_SOURCE_POSITION_PROPERTY), annotatedElement, annotation);
             return null;
