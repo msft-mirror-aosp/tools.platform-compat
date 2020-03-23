@@ -39,10 +39,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
@@ -72,11 +70,6 @@ import javax.tools.FileObject;
 @SupportedAnnotationTypes({"android.compat.annotation.UnsupportedAppUsage"})
 @SupportedSourceVersion(SourceVersion.RELEASE_9)
 public class UnsupportedAppUsageProcessor extends AbstractProcessor {
-
-    // Package name for writing output. Output will be written to the "class output" location within
-    // this package.
-    private static final String PACKAGE = "unsupportedappusage";
-    private static final String INDEX_CSV = "unsupportedappusage_index.csv";
 
     private static final String GENERATED_INDEX_FILE_EXTENSION = ".uau";
 
@@ -145,7 +138,6 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
             annotatedElements.get(packageElement, enclosingElementName).add(annotatedElement);
         }
 
-        Map<String, Element> signatureMap = new TreeMap<>();
         for (PackageElement packageElement : annotatedElements.rowKeySet()) {
             Map<String, List<Element>> row = annotatedElements.row(packageElement);
             for (String enclosingElementName : row.keySet()) {
@@ -158,7 +150,6 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
                                 annotatedElement);
                         if (annotationIndex != null) {
                             content.add(annotationIndex);
-                            signatureMap.put(signature, annotatedElement);
                         }
                     }
                 }
@@ -183,39 +174,7 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
             }
         }
 
-        // TODO(satayev): remove merged csv file, after soong starts merging individual csvs.
-        if (!signatureMap.isEmpty()) {
-            try {
-                writeToFile(INDEX_CSV,
-                        CSV_HEADER,
-                        signatureMap.entrySet()
-                                .stream()
-                                .map(e -> getAnnotationIndex(e.getKey(), annotation,
-                                        e.getValue())));
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to write output", e);
-            }
-        }
         return true;
-    }
-
-    /**
-     * Write the contents of a stream to a text file, with one line per item.
-     */
-    private void writeToFile(String name,
-            String headerLine,
-            Stream<?> contents) throws IOException {
-        PrintStream out = new PrintStream(processingEnv.getFiler().createResource(
-                CLASS_OUTPUT,
-                PACKAGE,
-                name)
-                .openOutputStream());
-        out.println(headerLine);
-        contents.forEach(o -> out.println(o));
-        if (out.checkError()) {
-            throw new IOException("Error when writing to " + name);
-        }
-        out.close();
     }
 
     /**

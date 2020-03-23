@@ -43,13 +43,13 @@ public class UnsupportedAppUsageProcessorTest {
             "    String overrideSourcePosition() default \"\";",
             "}");
 
-    private CsvReader compileAndReadCsv(JavaFileObject source) throws IOException {
+    private CsvReader compileAndReadCsv(JavaFileObject source, String filename) throws IOException {
         Compilation compilation =
                 Compiler.javac().withProcessors(new UnsupportedAppUsageProcessor())
                         .compile(ANNOTATION, source);
         CompilationSubject.assertThat(compilation).succeeded();
         Optional<JavaFileObject> csv = compilation.generatedFile(StandardLocation.CLASS_OUTPUT,
-                "unsupportedappusage/unsupportedappusage_index.csv");
+                filename);
         assertThat(csv.isPresent()).isTrue();
 
         return new CsvReader(csv.get().openInputStream());
@@ -64,7 +64,7 @@ public class UnsupportedAppUsageProcessorTest {
                 "  @UnsupportedAppUsage",
                 "  public void method() {}",
                 "}");
-        assertThat(compileAndReadCsv(src).getContents().get(0)).containsEntry(
+        assertThat(compileAndReadCsv(src, "a/b/Class.uau").getContents().get(0)).containsEntry(
                 "signature", "La/b/Class;->method()V"
         );
     }
@@ -78,7 +78,7 @@ public class UnsupportedAppUsageProcessorTest {
                 "  @UnsupportedAppUsage", // 4
                 "  public void method() {}", // 5
                 "}");
-        Map<String, String> row = compileAndReadCsv(src).getContents().get(0);
+        Map<String, String> row = compileAndReadCsv(src, "a/b/Class.uau").getContents().get(0);
         assertThat(row).containsEntry("startline", "4");
         assertThat(row).containsEntry("startcol", "3");
         assertThat(row).containsEntry("endline", "4");
@@ -94,7 +94,7 @@ public class UnsupportedAppUsageProcessorTest {
                 "  @UnsupportedAppUsage(someProperty=\"value\")", // 4
                 "  public void method() {}", // 5
                 "}");
-        assertThat(compileAndReadCsv(src).getContents().get(0)).containsEntry(
+        assertThat(compileAndReadCsv(src, "a/b/Class.uau").getContents().get(0)).containsEntry(
                 "properties", "someProperty=%22value%22");
     }
 
@@ -107,7 +107,7 @@ public class UnsupportedAppUsageProcessorTest {
                 "  @UnsupportedAppUsage(overrideSourcePosition=\"otherfile.aidl:30:10:31:20\")",
                 "  public void method() {}", // 5
                 "}");
-        Map<String, String> row = compileAndReadCsv(src).getContents().get(0);
+        Map<String, String> row = compileAndReadCsv(src, "a/b/Class.uau").getContents().get(0);
         assertThat(row).containsEntry("file", "otherfile.aidl");
         assertThat(row).containsEntry("startline", "30");
         assertThat(row).containsEntry("startcol", "10");
