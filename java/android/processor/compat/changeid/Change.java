@@ -16,13 +16,10 @@
 
 package android.processor.compat.changeid;
 
-import com.google.common.annotations.VisibleForTesting;
-
 /**
  * Simple data class that represents a change, built from the code annotations.
  */
-@VisibleForTesting
-public class Change {
+final class Change {
     final Long id;
     final String name;
     final boolean disabled;
@@ -46,8 +43,7 @@ public class Change {
      */
     final String sourcePosition;
 
-    @VisibleForTesting
-    public Change(Long id, String name, boolean disabled, boolean loggingOnly, Integer enabledAfter,
+     Change(Long id, String name, boolean disabled, boolean loggingOnly, Integer enabledAfter,
             String description, String javaPackage, String className, String qualifiedClass,
             String sourcePosition) {
         this.id = id;
@@ -74,7 +70,7 @@ public class Change {
         String qualifiedClass;
         String sourcePosition;
 
-        public Builder() {
+        Builder() {
         }
 
         public Builder id(long id) {
@@ -117,7 +113,7 @@ public class Change {
             return this;
         }
 
-        public Builder qualifedClass(String className) {
+        public Builder qualifiedClass(String className) {
             this.qualifiedClass = className;
             return this;
         }
@@ -129,9 +125,7 @@ public class Change {
 
         public Change build() {
             return new Change(id, name, disabled, loggingOnly, enabledAfter, description,
-                    javaPackage, javaClass,
-                    qualifiedClass, sourcePosition);
+                    javaPackage, javaClass, qualifiedClass, sourcePosition);
         }
-
     }
 }
