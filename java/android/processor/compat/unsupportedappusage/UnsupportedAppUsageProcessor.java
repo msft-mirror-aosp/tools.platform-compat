@@ -18,17 +18,11 @@ package android.processor.compat.unsupportedappusage;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
+import android.processor.compat.SingleAnnotationProcessor;
+import android.processor.compat.SourcePosition;
+
 import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Table;
-import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.LineMap;
-import com.sun.source.tree.Tree;
-import com.sun.source.util.SourcePositions;
-import com.sun.source.util.TreePath;
-import com.sun.source.util.Trees;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -37,15 +31,10 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Messager;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.Nullable;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
@@ -54,10 +43,7 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
 import javax.tools.FileObject;
 
 /**
@@ -69,7 +55,7 @@ import javax.tools.FileObject;
  */
 @SupportedAnnotationTypes({"android.compat.annotation.UnsupportedAppUsage"})
 @SupportedSourceVersion(SourceVersion.RELEASE_9)
-public class UnsupportedAppUsageProcessor extends AbstractProcessor {
+public final class UnsupportedAppUsageProcessor extends SingleAnnotationProcessor {
 
     private static final String GENERATED_INDEX_FILE_EXTENSION = ".uau";
 
@@ -91,52 +77,10 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
             "properties"
     );
 
-    private Elements elements;
-    private Messager messager;
-    private SourcePositions sourcePositions;
-    private Trees trees;
-    private Types types;
-
-    public synchronized void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-
-        this.elements = processingEnv.getElementUtils();
-        this.messager = processingEnv.getMessager();
-        this.trees = Trees.instance(processingEnv);
-        this.types = processingEnv.getTypeUtils();
-
-        this.sourcePositions = trees.getSourcePositions();
-    }
-
-    /**
-     * This is the main entry point in the processor, called by the compiler.
-     */
     @Override
-    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        if (annotations.size() == 0) {
-            return true;
-        }
-
+    protected void process(TypeElement annotation,
+            Table<PackageElement, String, List<Element>> annotatedElements) {
         SignatureConverter signatureConverter = new SignatureConverter(messager);
-        TypeElement annotation = Iterables.getOnlyElement(annotations);
-        Table<PackageElement, String, List<Element>> annotatedElements = HashBasedTable.create();
-
-        for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(annotation)) {
-            AnnotationMirror annotationMirror =
-                    getUnsupportedAppUsageAnnotationMirror(annotation, annotatedElement);
-            if (hasElement(annotationMirror, "implicitMember")) {
-                // Implicit member refers to member not present in code, ignore.
-                continue;
-            }
-            PackageElement packageElement = elements.getPackageOf(annotatedElement);
-            String enclosingElementName = getEnclosingElementName(annotatedElement);
-            Preconditions.checkNotNull(packageElement);
-            Preconditions.checkNotNull(enclosingElementName);
-            if (!annotatedElements.contains(packageElement, enclosingElementName)) {
-                annotatedElements.put(packageElement, enclosingElementName, new ArrayList<>());
-            }
-            annotatedElements.get(packageElement, enclosingElementName).add(annotatedElement);
-        }
 
         for (PackageElement packageElement : annotatedElements.rowKeySet()) {
             Map<String, List<Element>> row = annotatedElements.row(packageElement);
@@ -169,24 +113,15 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
                     }
                 } catch (IOException exception) {
                     messager.printMessage(ERROR, "Could not write CSV file: " + exception);
-                    return false;
                 }
             }
         }
-
-        return true;
     }
 
-    /**
-     * Returns a name of an enclosing element without the package name.
-     *
-     * <p>This would return names of all enclosing classes, e.g. <code>Outer.Inner.Foo</code>.
-     */
-    private String getEnclosingElementName(Element element) {
-        String fullQualifiedName =
-                ((QualifiedNameable) element.getEnclosingElement()).getQualifiedName().toString();
-        String packageName = elements.getPackageOf(element).toString();
-        return fullQualifiedName.substring(packageName.length() + 1);
+    @Override
+    protected boolean ignoreAnnotatedElement(Element element, AnnotationMirror mirror) {
+        // Implicit member refers to member not present in code, ignore.
+        return hasElement(mirror, "implicitMember");
     }
 
     /**
@@ -202,80 +137,41 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
      *
      * @return A single line of CSV text
      */
+    @Nullable
     private String getAnnotationIndex(String signature, TypeElement annotation, Element element) {
-        AnnotationMirror annotationMirror =
-                getUnsupportedAppUsageAnnotationMirror(annotation, element);
-
+        AnnotationMirror annotationMirror = getSupportedAnnotationMirror(annotation, element);
         String position = getSourcePositionOverride(element, annotationMirror);
         if (position == null) {
-            position = getSourcePosition(element, annotationMirror);
-            if (position == null) {
+            SourcePosition sourcePosition = getSourcePosition(element, annotationMirror);
+            if (sourcePosition == null) {
                 return null;
             }
+            position = Joiner.on(",").join(
+                    sourcePosition.getFilename(),
+                    sourcePosition.getStartLineNumber(),
+                    sourcePosition.getStartColumnNumber(),
+                    sourcePosition.getEndLineNumber(),
+                    sourcePosition.getEndColumnNumber());
         }
         return Joiner.on(",").join(
                 signature,
                 position,
-                getProperties(annotationMirror));
+                getAllProperties(annotationMirror));
     }
 
-    /**
-     * Find the annotation mirror for the @UnsupportedAppUsage annotation on the given element.
-     */
-    private AnnotationMirror getUnsupportedAppUsageAnnotationMirror(TypeElement annotation,
-            Element element) {
-        for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
-            TypeElement type = (TypeElement) mirror.getAnnotationType().asElement();
-            if (types.isSameType(annotation.asType(), mirror.getAnnotationType())) {
-                return mirror;
-            }
-        }
-        return null;
-    }
-
-    private String getSourcePosition(Element element, AnnotationMirror annotationMirror) {
-        TreePath path = trees.getPath(element, annotationMirror);
-        if (path == null) {
-            return null;
-        }
-        CompilationUnitTree compilationUnit = path.getCompilationUnit();
-        Tree tree = path.getLeaf();
-        long startPosition = sourcePositions.getStartPosition(compilationUnit, tree);
-        long endPosition = sourcePositions.getEndPosition(compilationUnit, tree);
-
-        LineMap lineMap = path.getCompilationUnit().getLineMap();
-        return Joiner.on(",").join(
-                compilationUnit.getSourceFile().getName(),
-                lineMap.getLineNumber(startPosition),
-                lineMap.getColumnNumber(startPosition),
-                lineMap.getLineNumber(endPosition),
-                lineMap.getColumnNumber(endPosition));
-    }
-
-    private String getSourcePositionOverride(Element annotatedElement,
-            AnnotationMirror annotation) {
-        Optional<? extends AnnotationValue> annotationValue =
-                annotation.getElementValues().keySet().stream()
-                        .filter(key -> key.getSimpleName().toString().equals(
-                                OVERRIDE_SOURCE_POSITION_PROPERTY))
-                        .map(key -> annotation.getElementValues().get(key))
-                        .reduce((a, b) -> {
-                            throw new IllegalStateException(
-                                    String.format("Only one %s expected, found %s in %s",
-                                            OVERRIDE_SOURCE_POSITION_PROPERTY, annotation,
-                                            annotatedElement));
-                        });
-
-        if (!annotationValue.isPresent()) {
+    @Nullable
+    private String getSourcePositionOverride(Element element, AnnotationMirror annotation) {
+        AnnotationValue annotationValue =
+                getAnnotationValue(element, annotation, OVERRIDE_SOURCE_POSITION_PROPERTY);
+        if (annotationValue == null) {
             return null;
         }
 
-        String parameterValue = annotationValue.get().getValue().toString();
-
+        String parameterValue = annotationValue.getValue().toString();
         if (!OVERRIDE_SOURCE_POSITION_PROPERTY_PATTERN.matcher(parameterValue).matches()) {
             messager.printMessage(ERROR, String.format(
                     "Expected %s to have format string:int:int:int:int",
-                    OVERRIDE_SOURCE_POSITION_PROPERTY), annotatedElement, annotation);
+                    OVERRIDE_SOURCE_POSITION_PROPERTY), element, annotation);
             return null;
         }
 
@@ -287,7 +183,7 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
                 key -> elementName.equals(key.getSimpleName().toString()));
     }
 
-    private String getProperties(AnnotationMirror annotation) {
+    private String getAllProperties(AnnotationMirror annotation) {
         return annotation.getElementValues().keySet().stream()
                 .filter(key -> !key.getSimpleName().toString().equals(
                         OVERRIDE_SOURCE_POSITION_PROPERTY))
@@ -307,6 +203,5 @@ public class UnsupportedAppUsageProcessor extends AbstractProcessor {
             throw new RuntimeException(e);
         }
     }
-
 
 }
