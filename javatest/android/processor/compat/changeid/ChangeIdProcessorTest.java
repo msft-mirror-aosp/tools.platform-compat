@@ -20,17 +20,15 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
-import com.google.testing.compile.JavaFileObjects;
-import com.google.testing.compile.Compilation;
-import com.google.testing.compile.Compiler;
-import com.google.testing.compile.CompilationSubject;
 import com.google.common.collect.ObjectArrays;
-
-import com.google.common.io.ByteSource;
-
-import javax.tools.JavaFileObject;
+import com.google.testing.compile.Compilation;
+import com.google.testing.compile.CompilationSubject;
+import com.google.testing.compile.Compiler;
+import com.google.testing.compile.JavaFileObjects;
 
 import org.junit.Test;
+
+import javax.tools.JavaFileObject;
 
 
 public class ChangeIdProcessorTest {
@@ -120,7 +118,7 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).succeeded();
         CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
                 "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
@@ -168,12 +166,13 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).succeeded();
         CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
                 "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(libcoreExpectedFile);
         CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "android.util",
-                "SomeClass_compat_config.xml").contentsAsString(UTF_8).isEqualTo(androidExpectedFile);
+                "SomeClass_compat_config.xml").contentsAsString(UTF_8).isEqualTo(
+                androidExpectedFile);
     }
 
     @Test
@@ -204,7 +203,7 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).succeeded();
         CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
                 "Compat.Inner_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
@@ -236,7 +235,7 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).succeeded();
         CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
                 "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
@@ -269,7 +268,7 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).succeeded();
         CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
                 "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
@@ -321,8 +320,8 @@ public class ChangeIdProcessorTest {
                         .withProcessors(new ChangeIdProcessor())
                         .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).hadErrorContaining(
-                "ChangeId cannot be annotated with both @LoggingOnly and @EnabledAfter or "
-                        + "@Disabled.");
+                "ChangeId cannot be annotated with both @LoggingOnly and "
+                        + "(@EnabledAfter | @Disabled).");
     }
 
     @Test
@@ -346,8 +345,8 @@ public class ChangeIdProcessorTest {
                         .withProcessors(new ChangeIdProcessor())
                         .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).hadErrorContaining(
-                "ChangeId cannot be annotated with both @LoggingOnly and @EnabledAfter or "
-                        + "@Disabled.");
+                "ChangeId cannot be annotated with both @LoggingOnly and "
+                        + "(@EnabledAfter | @Disabled).");
     }
 
     @Test
@@ -377,6 +376,7 @@ public class ChangeIdProcessorTest {
         CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
                 "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
     }
+
     @Test
     public void testIgnoredParams() {
         JavaFileObject[] source = {
@@ -394,7 +394,7 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).succeeded();
     }
 
@@ -412,10 +412,9 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).hadErrorContaining(
-                "Non field element changeId annotated with @ChangeId. Got type PARAMETER, "
-                        + "expected FIELD.");
+                "Non FIELD element annotated with @ChangeId.");
     }
 
     @Test
@@ -432,10 +431,9 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).hadErrorContaining(
-                "Non field element changeId annotated with @ChangeId. Got type PARAMETER, "
-                        + "expected FIELD.");
+                "Non FIELD element annotated with @ChangeId.");
     }
 
     @Test
@@ -455,10 +453,9 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).hadErrorContaining(
-                "Non constant/final variable MY_CHANGE_ID (or non constant value) annotated with "
-                        + "@ChangeId.");
+                "Non constant/final variable annotated with @ChangeId.");
     }
 
     @Test
@@ -478,9 +475,9 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).hadErrorContaining(
-                "Variables annotated with @ChangeId should be of type long.");
+                "Variables annotated with @ChangeId must be of type long.");
     }
 
     @Test
@@ -500,9 +497,9 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).hadErrorContaining(
-                "Non static variable MY_CHANGE_ID annotated with @ChangeId.");
+                "Non static variable annotated with @ChangeId.");
     }
 
     @Test
@@ -533,7 +530,7 @@ public class ChangeIdProcessorTest {
         Compilation compilation =
                 Compiler.javac()
                         .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations,source, JavaFileObject.class));
+                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
         CompilationSubject.assertThat(compilation).succeeded();
         CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
                 "Compat.Inner_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
