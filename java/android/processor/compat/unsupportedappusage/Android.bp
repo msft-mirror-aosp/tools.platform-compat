@@ -49,5 +49,8 @@ java_plugin {
 
     use_tools_jar: true,
 
-    visibility: ["//tools/platform-compat/java/android/compat/annotation:__subpackages__"],
+    visibility: [
+        "//libcore:__pkg__",
+        "//tools/platform-compat/java/android/compat/annotation:__subpackages__",
+    ],
 }
