@@ -26,8 +26,10 @@ import com.google.testing.compile.JavaFileObjects;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
@@ -41,15 +43,21 @@ public class UnsupportedAppUsageProcessorTest {
             "    String expectedSignature() default \"\";\n",
             "    String someProperty() default \"\";",
             "    String overrideSourcePosition() default \"\";",
+            "    String implicitMember() default \"\";",
             "}");
 
-    private CsvReader compileAndReadCsv(JavaFileObject source, String filename) throws IOException {
+    private Compilation compile(JavaFileObject source) {
         Compilation compilation =
                 Compiler.javac().withProcessors(new UnsupportedAppUsageProcessor())
                         .compile(ANNOTATION, source);
         CompilationSubject.assertThat(compilation).succeeded();
-        Optional<JavaFileObject> csv = compilation.generatedFile(StandardLocation.CLASS_OUTPUT,
-                filename);
+        return compilation;
+    }
+
+    private CsvReader compileAndReadCsv(JavaFileObject source, String filename) throws IOException {
+        Compilation compilation = compile(source);
+        Optional<JavaFileObject> csv = compilation.generatedFile(
+                StandardLocation.CLASS_OUTPUT, filename);
         assertThat(csv.isPresent()).isTrue();
 
         return new CsvReader(csv.get().openInputStream());
@@ -150,6 +158,24 @@ public class UnsupportedAppUsageProcessorTest {
         CompilationSubject.assertThat(compilation).hadErrorContaining(
                 "Expected overrideSourcePosition to have format "
                         + "string:int:int:int:int").inFile(src).onLine(4);
+    }
+
+    @Test
+    public void testImplicitMemberSkipped() throws Exception {
+        JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
+                "package a.b;", // 1
+                "import android.compat.annotation.UnsupportedAppUsage;", // 2
+                "public class Class {", // 3
+                "  @UnsupportedAppUsage(implicitMember=\"foo\")", // 4
+                "  public void method() {}", // 5
+                "}");
+        List<JavaFileObject> generatedNonClassFiles =
+                compile(src)
+                        .generatedFiles()
+                        .stream()
+                        .filter(file -> !file.getName().endsWith(".class"))
+                        .collect(Collectors.toList());
+        assertThat(generatedNonClassFiles).hasSize(0);
     }
 
     @Test
