@@ -16,11 +16,10 @@
 
 package android.processor.compat.changeid;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.io.IOException;
 import java.io.OutputStream;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -39,9 +38,11 @@ import javax.xml.transform.stream.StreamResult;
  * {@code
  * <config>
  *     <compat-change id="111" name="change-name1">
- *         <meta-data definedIn="java.package.ClassName" sourcePosition="java/package/ClassName.java:10" />
+ *         <meta-data definedIn="java.package.ClassName" sourcePosition="java/package/ClassName
+ *         .java:10" />
  *     </compat-change>
- *     <compat-change disabled="true" id="222" loggingOnly= "true" name="change-name2" description="my change">
+ *     <compat-change disabled="true" id="222" loggingOnly= "true" name="change-name2"
+ *     description="my change">
  *         <meta-data .../>
  *     </compat-change>
  *     <compat-change enableAfterTargetSdk="28" id="333" name="change-name3">
@@ -54,10 +55,8 @@ import javax.xml.transform.stream.StreamResult;
  *
  * The inner {@code meta-data} tags are intended to be stripped before embedding the config on a
  * device. They are intended for use by intermediate build tools only.
- *
  */
-@VisibleForTesting
-public final class XmlWriter {
+final class XmlWriter {
     //XML tags
     private static final String XML_ROOT = "config";
     private static final String XML_CHANGE_ELEMENT = "compat-change";
@@ -74,15 +73,13 @@ public final class XmlWriter {
     private Document mDocument;
     private Element mRoot;
 
-    @VisibleForTesting
-    public XmlWriter() {
+    XmlWriter() {
         mDocument = createDocument();
         mRoot = mDocument.createElement(XML_ROOT);
         mDocument.appendChild(mRoot);
     }
 
-    @VisibleForTesting
-    public void addChange(Change change) {
+    void addChange(Change change) {
         Element newElement = mDocument.createElement(XML_CHANGE_ELEMENT);
         newElement.setAttribute(XML_NAME_ATTR, change.name);
         newElement.setAttribute(XML_ID_ATTR, change.id.toString());
@@ -111,8 +108,7 @@ public final class XmlWriter {
         mRoot.appendChild(newElement);
     }
 
-    @VisibleForTesting
-    public void write(OutputStream output) {
+    void write(OutputStream output) throws IOException {
         try {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
@@ -122,7 +118,7 @@ public final class XmlWriter {
 
             transformer.transform(domSource, result);
         } catch (TransformerException e) {
-            throw new RuntimeException("Failed to write output", e);
+            throw new IOException("Failed to write output", e);
         }
     }
 
