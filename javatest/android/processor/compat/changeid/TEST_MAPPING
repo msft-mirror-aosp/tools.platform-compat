@@ -1,7 +1,7 @@
 {
   "imports": [
     {
-      "path": "java/android/processor/compat/changeid"
+      "path": "java/android/processor/compat"
     }
   ]
 }
