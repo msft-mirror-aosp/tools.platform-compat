@@ -24,6 +24,7 @@ java_library {
         "LoggingOnly.java",
     ],
     sdk_version: "core_current",
+    exported_plugins: ["compat-changeid-annotation-processor"],
 }
 
 // Don't forget to depend on exported_plugins, if using sources directly
@@ -36,6 +37,7 @@ filegroup {
         "LoggingOnly.java",
         "UnsupportedAppUsage.java",
     ],
+    visibility: ["//libcore:__pkg__"],
 }
 
 java_library {
