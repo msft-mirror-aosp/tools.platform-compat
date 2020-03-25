@@ -1,7 +1,7 @@
 {
   "imports": [
     {
-      "path": "java/android/processor/compat/unsupportedappusage"
+      "path": "java/android/processor/compat"
     }
   ]
 }
