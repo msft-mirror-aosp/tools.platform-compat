@@ -15,13 +15,12 @@
  */
 
 java_library_host {
-    name: "unsupportedappusage-annotation-processor-lib",
+    name: "compat-processor",
     srcs: [
         "*.java",
     ],
     static_libs: [
         "guava",
-        "//tools/platform-compat/java/android/processor/compat:compat-processor",
     ],
     openjdk9: {
         javacflags: [
@@ -33,24 +32,5 @@ java_library_host {
         ],
     },
 
-    visibility: ["//tools/platform-compat/javatest/android/processor/compat/unsupportedappusage:__subpackages__"],
-}
-
-java_plugin {
-    name: "unsupportedappusage-annotation-processor",
-    processor_class: "android.processor.compat.unsupportedappusage.UnsupportedAppUsageProcessor",
-
-    java_resources: [
-       "META-INF/**/*",
-    ],
-    static_libs: [
-        "unsupportedappusage-annotation-processor-lib"
-    ],
-
-    use_tools_jar: true,
-
-    visibility: [
-        "//libcore:__pkg__",
-        "//tools/platform-compat/java/android/compat/annotation:__subpackages__",
-    ],
+    visibility: ["//tools/platform-compat/java/android/processor/compat:__subpackages__"],
 }
