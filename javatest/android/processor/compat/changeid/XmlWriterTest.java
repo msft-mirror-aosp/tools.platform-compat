@@ -24,7 +24,6 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
-
 public class XmlWriterTest {
 
     private static final String HEADER =
@@ -33,7 +32,7 @@ public class XmlWriterTest {
     private OutputStream mOutputStream = new ByteArrayOutputStream();
 
     @Test
-    public void testNoChanges() {
+    public void testNoChanges() throws Exception {
         XmlWriter writer = new XmlWriter();
         writer.write(mOutputStream);
 
@@ -43,7 +42,7 @@ public class XmlWriterTest {
     }
 
     @Test
-    public void testOneChange() {
+    public void testOneChange() throws Exception {
         XmlWriter writer = new XmlWriter();
         Change c = new Change.Builder()
                 .id(123456789L)
@@ -61,7 +60,7 @@ public class XmlWriterTest {
     }
 
     @Test
-    public void testSomeChanges() {
+    public void testSomeChanges() throws Exception {
         XmlWriter writer = new XmlWriter();
         Change c = new Change.Builder()
                 .id(111L)
