@@ -45,8 +45,6 @@ java_plugin {
     name: "compat-changeid-annotation-processor",
     processor_class: "android.processor.compat.changeid.ChangeIdProcessor",
 
-    visibility: ["//visibility:public"],
-
     java_resources: [
         "META-INF/**/*",
     ],
@@ -57,4 +55,9 @@ java_plugin {
     installable: false,
 
     use_tools_jar: true,
+
+    visibility: [
+        "//libcore:__pkg__",
+        "//tools/platform-compat/java/android/compat/annotation:__subpackages__",
+    ],
 }
