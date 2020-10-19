@@ -25,6 +25,7 @@ final class Change {
     final boolean disabled;
     final boolean loggingOnly;
     final Integer enabledAfter;
+    final Integer enabledSince;
     final String description;
     /**
      * Package name that the change is defined in.
@@ -44,13 +45,14 @@ final class Change {
     final String sourcePosition;
 
      Change(Long id, String name, boolean disabled, boolean loggingOnly, Integer enabledAfter,
-            String description, String javaPackage, String className, String qualifiedClass,
-            String sourcePosition) {
+            Integer enabledSince, String description, String javaPackage, String className,
+            String qualifiedClass, String sourcePosition) {
         this.id = id;
         this.name = name;
         this.disabled = disabled;
         this.loggingOnly = loggingOnly;
         this.enabledAfter = enabledAfter;
+        this.enabledSince = enabledSince;
         this.description = description;
         this.javaPackage = javaPackage;
         this.className = className;
@@ -64,6 +66,7 @@ final class Change {
         boolean disabled;
         boolean loggingOnly;
         Integer enabledAfter;
+        Integer enabledSince;
         String description;
         String javaPackage;
         String javaClass;
@@ -98,6 +101,11 @@ final class Change {
             return this;
         }
 
+        public Builder enabledSince(int sdkVersion) {
+            this.enabledSince = sdkVersion;
+            return this;
+        }
+
         public Builder description(String description) {
             this.description = description;
             return this;
@@ -124,8 +132,8 @@ final class Change {
         }
 
         public Change build() {
-            return new Change(id, name, disabled, loggingOnly, enabledAfter, description,
-                    javaPackage, javaClass, qualifiedClass, sourcePosition);
+            return new Change(id, name, disabled, loggingOnly, enabledAfter, enabledSince,
+                    description, javaPackage, javaClass, qualifiedClass, sourcePosition);
         }
     }
 }
