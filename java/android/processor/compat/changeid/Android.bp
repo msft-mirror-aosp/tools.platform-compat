@@ -58,6 +58,7 @@ java_plugin {
 
     visibility: [
         "//libcore:__pkg__",
+        "//external/icu/android_icu4j:__pkg__",
         "//tools/platform-compat/java/android/compat/annotation:__subpackages__",
     ],
 }
