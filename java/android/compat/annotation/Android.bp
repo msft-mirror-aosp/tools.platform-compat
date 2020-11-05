@@ -39,7 +39,10 @@ filegroup {
         "LoggingOnly.java",
         "UnsupportedAppUsage.java",
     ],
-    visibility: ["//libcore:__pkg__"],
+    visibility: [
+        "//libcore:__pkg__",
+        "//external/icu/android_icu4j:__pkg__",
+    ],
 }
 
 java_library {
