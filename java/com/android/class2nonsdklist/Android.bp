@@ -1,3 +1,4 @@
+//
 // Copyright (C) 2018 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,19 +12,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
-java_test_host {
-    name: "class2nonsdklisttest",
+java_library_host {
+    name: "class2nonsdklistlib",
+    srcs: ["**/*.java"],
+    static_libs: [
+        "commons-cli-1.2",
+        "apache-bcel",
+        "guava",
+        "testng",
+        "hamcrest-library",
+    ],
+}
 
-    // Only compile source java files in this apk.
-    srcs: ["src/**/*.java"],
-
+java_binary_host {
+    name: "class2nonsdklist",
+    manifest: "class2nonsdklist.mf",
     static_libs: [
         "class2nonsdklistlib",
-        "libjavac",
-        "truth-host-prebuilt",
-        "mockito-host",
-        "junit-host",
-        "objenesis",
     ],
 }
