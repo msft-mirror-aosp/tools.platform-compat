@@ -18,7 +18,7 @@ java_library_host {
 
     visibility: ["//visibility:public"],
 
-    srcs: ["src/**/*.java"],
+    srcs: ["**/*.java"],
 
     static_libs: [
         "apache-bcel",
