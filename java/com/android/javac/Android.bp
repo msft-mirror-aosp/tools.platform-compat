@@ -1,5 +1,4 @@
-//
-// Copyright (C) 2018 The Android Open Source Project
+// Copyright (C) 2019 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
 
+// This is a helper library for host tests that compile Java code at test time.
 java_library_host {
-    name: "class2nonsdklistlib",
-    srcs: ["src/**/*.java"],
+    name: "libjavac",
+
+    visibility: ["//visibility:public"],
+
+    srcs: ["**/*.java"],
+
     static_libs: [
-        "commons-cli-1.2",
         "apache-bcel",
         "guava",
-        "testng",
-        "hamcrest-library",
-    ],
-}
-
-java_binary_host {
-    name: "class2nonsdklist",
-    manifest: "src/class2nonsdklist.mf",
-    static_libs: [
-        "class2nonsdklistlib",
     ],
 }

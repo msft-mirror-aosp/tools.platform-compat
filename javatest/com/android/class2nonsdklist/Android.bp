@@ -16,7 +16,7 @@ java_test_host {
     name: "class2nonsdklisttest",
 
     // Only compile source java files in this apk.
-    srcs: ["src/**/*.java"],
+    srcs: ["**/*.java"],
 
     static_libs: [
         "class2nonsdklistlib",
