@@ -601,14 +601,15 @@ public class UnsupportedAppUsageAnnotationHandlerTest extends AnnotationHandlerT
         mJavac.compile();
         new AnnotationVisitor(mJavac.getCompiledClass("a.b.Class"), mStatus,
                 ImmutableMap.of("Lannotation/Anno2;", createGreylistHandler(x -> true,
-                        ImmutableMap.of(0, "flag0")))
+                        ImmutableMap.of(30, "flag30")))
         ).visit();
 
+        // The absence of a publicAlternatives value should *not* be an error
         assertNoErrors();
         ArgumentCaptor<Map<String, String>> properties = ArgumentCaptor.forClass(Map.class);
         verify(mConsumer, times(1)).consume(any(), properties.capture(), any());
         assertThat(properties.getValue()).containsExactly(
-                "maxTargetSdk", "0",
+                "maxTargetSdk", "30",
                 "trackingBug", "170729553");
     }
 }
