@@ -87,6 +87,16 @@ public class ChangeIdProcessorTest {
                     "@Target({FIELD})",
                     "public @interface EnabledSince {",
                     "int targetSdkVersion();",
+                    "}"),
+            JavaFileObjects.forSourceLines("android.compat.annotation.Overridable",
+                    "package android.compat.annotation;",
+                    "import static java.lang.annotation.ElementType.FIELD;",
+                    "import static java.lang.annotation.RetentionPolicy.SOURCE;",
+                    "import java.lang.annotation.Retention;",
+                    "import java.lang.annotation.Target;",
+                    "@Retention(SOURCE)",
+                    "@Target({FIELD})",
+                    "public @interface Overridable {",
                     "}")
 
     };
@@ -104,6 +114,7 @@ public class ChangeIdProcessorTest {
                         "import android.compat.annotation.EnabledAfter;",
                         "import android.compat.annotation.EnabledSince;",
                         "import android.compat.annotation.Disabled;",
+                        "import android.compat.annotation.Overridable;",
                         "public class Compat {",
                         "    /**",
                         "    * description of",
@@ -120,20 +131,28 @@ public class ChangeIdProcessorTest {
                         "    @ChangeId",
                         "    @EnabledSince(targetSdkVersion=30)",
                         "    public static final long LAST_CHANGE = 23456701l;",
+                        "    /** description of OVERRIDABLE_CHANGE **/",
+                        "    @ChangeId",
+                        "    @Overridable",
+                        "    public static final long OVERRIDABLE_CHANGE = 23456702l;",
                         "}")
         };
         String expectedFile = HEADER + "<config>" +
                 "<compat-change description=\"description of MY_CHANGE_ID\" "
                 + "enableAfterTargetSdk=\"29\" id=\"123456789\" name=\"MY_CHANGE_ID\">"
                 + "<meta-data definedIn=\"libcore.util.Compat\" "
-                + "sourcePosition=\"libcore/util/Compat.java:12\"/></compat-change>"
+                + "sourcePosition=\"libcore/util/Compat.java:13\"/></compat-change>"
                 + "<compat-change description=\"description of ANOTHER_CHANGE\" disabled=\"true\" "
                 + "id=\"23456700\" name=\"ANOTHER_CHANGE\"><meta-data definedIn=\"libcore.util"
-                + ".Compat\" sourcePosition=\"libcore/util/Compat.java:15\"/></compat-change>"
+                + ".Compat\" sourcePosition=\"libcore/util/Compat.java:16\"/></compat-change>"
                 + "<compat-change description=\"description of LAST_CHANGE\" "
                 + "enableSinceTargetSdk=\"30\" id=\"23456701\" name=\"LAST_CHANGE\">"
                 + "<meta-data definedIn=\"libcore.util.Compat\" "
-                + "sourcePosition=\"libcore/util/Compat.java:19\"/></compat-change>"
+                + "sourcePosition=\"libcore/util/Compat.java:20\"/></compat-change>"
+                + "<compat-change description=\"description of OVERRIDABLE_CHANGE\" "
+                + "id=\"23456702\" name=\"OVERRIDABLE_CHANGE\" overridable=\"true\">"
+                + "<meta-data definedIn=\"libcore.util.Compat\" "
+                + "sourcePosition=\"libcore/util/Compat.java:24\"/></compat-change>"
                 + "</config>";
         Compilation compilation =
                 Compiler.javac()
