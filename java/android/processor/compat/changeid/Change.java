@@ -27,6 +27,7 @@ final class Change {
     final Integer enabledAfter;
     final Integer enabledSince;
     final String description;
+    final boolean overridable;
     /**
      * Package name that the change is defined in.
      */
@@ -45,8 +46,9 @@ final class Change {
     final String sourcePosition;
 
      Change(Long id, String name, boolean disabled, boolean loggingOnly, Integer enabledAfter,
-            Integer enabledSince, String description, String javaPackage, String className,
-            String qualifiedClass, String sourcePosition) {
+             Integer enabledSince, String description, boolean overridable, String javaPackage,
+             String className,
+             String qualifiedClass, String sourcePosition) {
         this.id = id;
         this.name = name;
         this.disabled = disabled;
@@ -54,6 +56,7 @@ final class Change {
         this.enabledAfter = enabledAfter;
         this.enabledSince = enabledSince;
         this.description = description;
+        this.overridable = overridable;
         this.javaPackage = javaPackage;
         this.className = className;
         this.qualifiedClass = qualifiedClass;
@@ -68,6 +71,7 @@ final class Change {
         Integer enabledAfter;
         Integer enabledSince;
         String description;
+        boolean overridable;
         String javaPackage;
         String javaClass;
         String qualifiedClass;
@@ -111,6 +115,11 @@ final class Change {
             return this;
         }
 
+        public Builder overridable() {
+            this.overridable = true;
+            return this;
+        }
+
         public Builder javaPackage(String javaPackage) {
             this.javaPackage = javaPackage;
             return this;
@@ -133,7 +142,7 @@ final class Change {
 
         public Change build() {
             return new Change(id, name, disabled, loggingOnly, enabledAfter, enabledSince,
-                    description, javaPackage, javaClass, qualifiedClass, sourcePosition);
+                    description, overridable, javaPackage, javaClass, qualifiedClass, sourcePosition);
         }
     }
 }
