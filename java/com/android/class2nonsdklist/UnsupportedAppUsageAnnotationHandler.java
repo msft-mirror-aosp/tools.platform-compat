@@ -34,7 +34,7 @@ public class UnsupportedAppUsageAnnotationHandler extends AnnotationHandler {
     private static final String IMPLICIT_MEMBER_PROPERTY = "implicitMember";
     private static final String PUBLIC_ALTERNATIVES_PROPERTY = "publicAlternatives";
     private static final String TRACKING_BUG_PROPERTY = "trackingBug";
-    // we are temporarilly treating this bug id as if it is specified with maxTargetSdk=0
+    // APIs with this tracking bug are exempted from public alternatives requirements
     private static final Long RESTRICT_UNUSED_APIS_BUG = 170729553L;
     private static final Integer SDK_VERSION_R = 30;
 
@@ -157,11 +157,9 @@ public class UnsupportedAppUsageAnnotationHandler extends AnnotationHandler {
             }
         }
 
+        // Is this API exempted from the public alternatives enforcement?
         boolean isSpecialTrackingBug = RESTRICT_UNUSED_APIS_BUG.equals(trackingBug) &&
                 SDK_VERSION_R.equals(maxTargetSdk);
-        if (isSpecialTrackingBug) {
-            maxTargetSdk = 0;
-        }
 
         if (context instanceof AnnotatedClassContext && implicitMemberSignature == null) {
             context.reportError(
@@ -188,19 +186,17 @@ public class UnsupportedAppUsageAnnotationHandler extends AnnotationHandler {
         } catch (JavadocLinkSyntaxError | AlternativeNotFoundError e) {
             context.reportError(e.toString());
         } catch (RequiredAlternativeNotSpecifiedError e) {
-            context.reportError("Signature %s moved to %s without specifying public "
-                            + "alternatives; Refer to go/unsupportedappusage-public-alternatives "
-                            + "for details.",
-                    signature, mSdkVersionToFlagMap.get(maxTargetSdk));
+            if (!isSpecialTrackingBug) {
+                context.reportError(
+                        "Signature %s moved to %s without specifying public alternatives; "
+                        + "Refer to go/unsupportedappusage-public-alternatives for details.",
+                        signature, mSdkVersionToFlagMap.get(maxTargetSdk));
+            }
         }
 
         // Consume this annotation if it matches the predicate.
         if (mClassMemberFilter.test(new ClassMember(signature, isBridgeMethod))) {
-            Map<String, String> annotationProperties = stringifyAnnotationProperties(annotation);
-            if (isSpecialTrackingBug) {
-                annotationProperties.put(MAX_TARGET_SDK_PROPERTY, "0");
-            }
-            mAnnotationConsumer.consume(signature, annotationProperties,
+            mAnnotationConsumer.consume(signature, stringifyAnnotationProperties(annotation),
                     ImmutableSet.of(mSdkVersionToFlagMap.get(maxTargetSdk)));
         }
     }
