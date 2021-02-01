@@ -72,6 +72,7 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
     private static final String ENABLED_SINCE_CLASS_NAME = "android.compat.annotation.EnabledSince";
     private static final String LOGGING_CLASS_NAME = "android.compat.annotation.LoggingOnly";
     private static final String TARGET_SDK_VERSION = "targetSdkVersion";
+    private static final String OVERRIDABLE_CLASS_NAME = "android.compat.annotation.Overridable";
 
     private static final Pattern JAVADOC_SANITIZER = Pattern.compile("^\\s", Pattern.MULTILINE);
     private static final Pattern HIDE_TAG_MATCHER = Pattern.compile("(\\s|^)@hide(\\s|$)");
@@ -193,6 +194,9 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
                     break;
                 case ENABLED_SINCE_CLASS_NAME:
                     builder.enabledSince((Integer)(Objects.requireNonNull(sdkValue).getValue()));
+                    break;
+                case OVERRIDABLE_CLASS_NAME:
+                    builder.overridable();
                     break;
                 case CHANGE_ID_QUALIFIED_CLASS_NAME:
                     changeId = mirror;
