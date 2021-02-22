@@ -1,5 +1,9 @@
 package com.android.class2nonsdklist;
 
+import com.android.annotationvisitor.AnnotatedMemberContext;
+import com.android.annotationvisitor.AnnotationContext;
+import com.android.annotationvisitor.Status;
+
 import org.apache.bcel.classfile.DescendingVisitor;
 import org.apache.bcel.classfile.EmptyVisitor;
 import org.apache.bcel.classfile.Field;

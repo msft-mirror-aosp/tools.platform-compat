@@ -26,13 +26,16 @@ import static org.mockito.Mockito.verify;
 
 import static java.util.Collections.emptySet;
 
+import com.android.annotationvisitor.AnnotationHandler;
+import com.android.annotationvisitor.AnnotationHandlerTestBase;
+import com.android.annotationvisitor.AnnotationVisitor;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.util.Map;
