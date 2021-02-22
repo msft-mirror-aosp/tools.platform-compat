@@ -21,6 +21,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.testng.Assert.expectThrows;
 import static org.testng.Assert.assertThrows;
 
+import com.android.annotationvisitor.AnnotationHandlerTestBase;
+
 import org.junit.Test;
 
 import java.util.Arrays;
