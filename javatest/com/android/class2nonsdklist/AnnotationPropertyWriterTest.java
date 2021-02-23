@@ -51,8 +51,8 @@ public class AnnotationPropertyWriterTest {
         mAnnotationPropertyWriter.close();
 
         String output = mByteArrayOutputStream.toString();
-        String expected = "prop,signature\n"
-                + "|val|,|foo|\n";
+        String expected = "signature,prop\n"
+                + "|foo|,|val|\n";
         assertThat(output).isEqualTo(expected);
     }
 
@@ -67,8 +67,8 @@ public class AnnotationPropertyWriterTest {
         mAnnotationPropertyWriter.close();
 
         String output = mByteArrayOutputStream.toString();
-        String expected = "prop,signature\n"
-                + "|val1 || val2 || val3|,|foo|\n";
+        String expected = "signature,prop\n"
+                + "|foo|,|val1 || val2 || val3|\n";
         assertThat(output).isEqualTo(expected);
     }
 }
