@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 The Android Open Source Project
+ * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package com.android.class2nonsdklist;
+package com.android.annotationvisitor;
 
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+
+import org.apache.bcel.classfile.AnnotationEntry;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.apache.bcel.classfile.AnnotationEntry;
-import org.junit.Before;
-import org.junit.Test;
 
 public class RepeatedAnnotationHandlerTest extends AnnotationHandlerTestBase {
 
@@ -83,7 +85,7 @@ public class RepeatedAnnotationHandlerTest extends AnnotationHandlerTestBase {
         }
 
         @Override
-        void handleAnnotation(AnnotationEntry annotation,
+        protected void handleAnnotation(AnnotationEntry annotation,
             AnnotationContext context) {
             classes.add(annotation.getElementValuePairs()[0].getValue().stringifyValue());
         }
