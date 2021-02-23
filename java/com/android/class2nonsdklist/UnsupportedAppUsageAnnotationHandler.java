@@ -1,5 +1,12 @@
 package com.android.class2nonsdklist;
 
+import com.android.annotationvisitor.AnnotatedClassContext;
+import com.android.annotationvisitor.AnnotatedMemberContext;
+import com.android.annotationvisitor.AnnotationConsumer;
+import com.android.annotationvisitor.AnnotationContext;
+import com.android.annotationvisitor.AnnotationHandler;
+import com.android.annotationvisitor.Status;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 

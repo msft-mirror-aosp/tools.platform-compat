@@ -1,5 +1,7 @@
 package com.android.class2nonsdklist;
 
+import com.android.annotationvisitor.AnnotationConsumer;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;

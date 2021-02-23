@@ -16,6 +16,13 @@
 
 package com.android.class2nonsdklist;
 
+import com.android.annotationvisitor.AnnotationConsumer;
+import com.android.annotationvisitor.AnnotationHandler;
+import com.android.annotationvisitor.AnnotationVisitor;
+import com.android.annotationvisitor.JarReader;
+import com.android.annotationvisitor.RepeatedAnnotationHandler;
+import com.android.annotationvisitor.Status;
+
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
