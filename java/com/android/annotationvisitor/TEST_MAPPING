@@ -1,0 +1,13 @@
+{
+  "presubmit": [
+    {
+      "name": "annotationvisitortest",
+      "host" : true
+    }
+  ],
+  "imports": [
+    {
+      "path": "java/com/android/class2nonsdklist"
+    }
+  ]
+}
