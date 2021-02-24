@@ -14,10 +14,15 @@
 // limitations under the License.
 //
 
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
 java_library_host {
     name: "class2nonsdklistlib",
-    srcs: ["**/*.java"],
+    srcs: ["*.java"],
     static_libs: [
+        "annotationvisitor",
         "commons-cli-1.2",
         "apache-bcel",
         "guava",
