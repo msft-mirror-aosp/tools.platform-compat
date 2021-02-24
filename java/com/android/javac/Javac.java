@@ -19,6 +19,7 @@ package com.android.javac;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import java.util.Collections;
 import java.util.stream.Collectors;
 import org.apache.bcel.classfile.ClassParser;
 import org.apache.bcel.classfile.JavaClass;
@@ -94,6 +95,8 @@ public class Javac {
                 mCompilationUnits);
         if (processor != null) {
             task.setProcessors(Lists.newArrayList(processor));
+        } else {
+            task.setProcessors(Collections.EMPTY_LIST);
         }
         boolean result = task.call();
         if (!result) {
