@@ -16,18 +16,26 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-java_test_host {
-    name: "class2nonsdklisttest",
-    // Only compile source java files in this package.
-    srcs: ["*.java"],
+java_library_host {
+    name: "annotationvisitor-testutil",
+    srcs: ["AnnotationHandlerTestBase.java"],
     static_libs: [
-        "annotationvisitor-testutil",
-        "class2nonsdklistlib",
+        "annotationvisitor",
         "libjavac",
-        "truth-host-prebuilt",
         "mockito-host",
         "junit-host",
-        "objenesis",
+    ],
+}
+
+java_test_host {
+    name: "annotationvisitortest",
+    srcs: ["RepeatedAnnotationHandlerTest.java"],
+    static_libs: [
+        "annotationvisitor-testutil",
+        "apache-bcel",
+        "guava",
+        "junit-host",
+        "truth-host-prebuilt",
     ],
     test_suites: ["general-tests"],
 }

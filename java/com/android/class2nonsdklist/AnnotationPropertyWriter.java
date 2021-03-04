@@ -1,5 +1,7 @@
 package com.android.class2nonsdklist;
 
+import com.android.annotationvisitor.AnnotationConsumer;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 
 public class AnnotationPropertyWriter implements AnnotationConsumer {
 
+    private static final String SIGNATURE_COLUMN = "signature";
     private final PrintStream mOutput;
     private final List<Map<String, String>> mContents;
     private final Set<String> mColumns;
@@ -35,10 +38,10 @@ public class AnnotationPropertyWriter implements AnnotationConsumer {
     public void consume(String apiSignature, Map<String, String> annotationProperties,
             Set<String> parsedFlags) {
         // Clone properties map.
-        Map<String, String> contents = new HashMap(annotationProperties);
+        Map<String, String> contents = new HashMap<>(annotationProperties);
 
         // Append the member signature.
-        contents.put("signature", apiSignature);
+        contents.put(SIGNATURE_COLUMN, apiSignature);
 
         // Store data.
         mColumns.addAll(contents.keySet());
@@ -53,16 +56,26 @@ public class AnnotationPropertyWriter implements AnnotationConsumer {
     }
 
     public void close() {
-        // Sort columns by name and print header row.
+        // Sort columns by name.
         List<String> columns = new ArrayList<>(mColumns);
         columns.sort(Comparator.naturalOrder());
-        mOutput.println(columns.stream().collect(Collectors.joining(",")));
 
-        // Sort contents according to columns and print.
+        // Make sure that the signature column, if present, comes first.
+        if (columns.remove(SIGNATURE_COLUMN)) {
+            columns.add(0, SIGNATURE_COLUMN);
+        }
+
+        // Print header row.
+        mOutput.println(String.join(",", columns));
+
+        // Sort rows by signature
+        mContents.sort(Comparator.comparing(r -> r.get(SIGNATURE_COLUMN)));
+
+        // Print contents of each row in column order.
         for (Map<String, String> row : mContents) {
             mOutput.println(columns.stream().map(column -> row.getOrDefault(column, ""))
-                    .map(column -> escapeCsvColumn(column))
-                    .collect(Collectors.joining(",")));
+                .map(AnnotationPropertyWriter::escapeCsvColumn)
+                .collect(Collectors.joining(",")));
         }
 
         // Close output.
