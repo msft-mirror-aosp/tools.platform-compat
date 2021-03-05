@@ -23,6 +23,7 @@ java_library_host {
         "annotationvisitor",
         "libjavac",
         "mockito-host",
+        "objenesis",
         "junit-host",
     ],
 }
