@@ -1,8 +1,0 @@
-{
-  "presubmit": [
-    {
-      "name": "class2nonsdklisttest",
-      "host" : true
-    }
-  ]
-}
