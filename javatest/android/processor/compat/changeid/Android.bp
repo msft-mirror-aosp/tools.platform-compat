@@ -34,8 +34,4 @@ java_test_host {
         "objenesis-host",
         "truth-prebuilt",
     ],
-
-    test_suites: [
-        "general-tests",
-    ],
 }
