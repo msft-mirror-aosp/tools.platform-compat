@@ -34,8 +34,4 @@ java_test_host {
         "truth-host-prebuilt",
         "unsupportedappusage-annotation-processor-lib",
     ],
-
-    test_suites: [
-        "general-tests",
-    ],
 }
