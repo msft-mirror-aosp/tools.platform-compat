@@ -39,7 +39,6 @@ python_test_host {
         "process_compat_config.py",
         "process-compat-config-test.py",
     ],
-    test_suites: ["general-tests"],
     version: {
         py2: {
             enabled: true,
@@ -47,6 +46,9 @@ python_test_host {
         py3: {
             enabled: false,
         },
+    },
+    test_options: {
+        unit_test: true,
     },
 }
 
