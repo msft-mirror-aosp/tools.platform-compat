@@ -500,7 +500,7 @@ public class ChangeIdProcessorTest {
                         "package android.compat;",
                         "import android.compat.annotation.ChangeId;",
                         "public final class Compatibility {",
-                        "   public static void reportUnconditionalChange(@ChangeId long changeId) {}",
+                        "   public static void reportChange(@ChangeId long changeId) {}",
                         "   public static boolean isChangeEnabled(@ChangeId long changeId) {",
                         "       return true;",
                         "   }",
@@ -521,7 +521,7 @@ public class ChangeIdProcessorTest {
                         "package android.compat;",
                         "import android.compat.annotation.ChangeId;",
                         "public final class OtherClass {",
-                        "   public static void reportUnconditionalChange(@ChangeId long changeId) {}",
+                        "   public static void reportChange(@ChangeId long changeId) {}",
                         "}")
         };
         Compilation compilation =
