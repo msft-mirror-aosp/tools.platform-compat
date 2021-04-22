@@ -62,7 +62,7 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
 
     private static final String IGNORED_CLASS = "android.compat.Compatibility";
     private static final ImmutableSet<String> IGNORED_METHOD_NAMES =
-            ImmutableSet.of("reportChange", "isChangeEnabled");
+            ImmutableSet.of("reportUnconditionalChange", "isChangeEnabled");
 
     private static final String CHANGE_ID_QUALIFIED_CLASS_NAME =
             "android.compat.annotation.ChangeId";
