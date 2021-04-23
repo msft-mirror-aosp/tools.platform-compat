@@ -22,11 +22,10 @@ java_test_helper_library {
     host_supported: true,
     device_supported: false,
     libs: [
-        //"cts-tradefed",
+        "guava",
         "tradefed",
     ],
     static_libs: [
         "dexlib2-no-guava-no-cli",
-        "guava",
     ],
 }
