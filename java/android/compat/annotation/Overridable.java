@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
-}
+package android.compat.annotation;
 
-java_test_host {
-    name: "compat-changeid-annotation-processor-test",
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
-    srcs: [
-        "ChangeIdProcessorTest.java",
-        "XmlWriterTest.java",
-    ],
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-    static_libs: [
-        "compat-changeid-annotation-processor-lib",
-        "compile-testing-prebuilt",
-        "junit-host",
-        "mockito-host",
-        "objenesis-host",
-        "truth-prebuilt",
-    ],
+/**
+ * Used to indicate that a compatibility {@link ChangeId change} can be overridden on user builds.
+ *
+ * <p>This annotation should only be applied to change ID constants that are also annotated with
+ * {@link ChangeId}. In any other context, this annotation will have no effect.
+ *
+ * @hide
+ */
+@Retention(SOURCE)
+@Target({FIELD})
+public @interface Overridable {
 }
