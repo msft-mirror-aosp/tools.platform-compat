@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 The Android Open Source Project
+ * Copyright (C) 2021 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,18 @@
  * limitations under the License.
  */
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
-}
+package com.android.annotationvisitor;
 
-java_test_host {
-    name: "compat-changeid-annotation-processor-test",
+public interface StatusReporter {
+    /**
+     * Report an error in this context. The final error message will include
+     * the class and member names, and the source file name.
+     */
+    void reportError(String message, Object... args);
 
-    srcs: [
-        "ChangeIdProcessorTest.java",
-        "XmlWriterTest.java",
-    ],
-
-    static_libs: [
-        "compat-changeid-annotation-processor-lib",
-        "compile-testing-prebuilt",
-        "junit-host",
-        "mockito-host",
-        "objenesis-host",
-        "truth-prebuilt",
-    ],
+    /**
+     * Report a warning in this context. The final message will include the
+     * class and member names, and the source file name.
+     */
+    void reportWarning(String message, Object... args);
 }
