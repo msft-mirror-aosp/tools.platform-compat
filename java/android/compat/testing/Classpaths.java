@@ -19,7 +19,7 @@ package android.compat.testing;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.INativeDevice;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
@@ -52,7 +52,7 @@ public final class Classpaths {
     }
 
     /** Returns on device filepaths to the jars that are part of a given classpath. */
-    public static ImmutableList<String> getJarsOnClasspath(ITestDevice device,
+    public static ImmutableList<String> getJarsOnClasspath(INativeDevice device,
             ClasspathType classpath) throws DeviceNotAvailableException {
         CommandResult shellResult = device.executeShellV2Command("echo $" + classpath);
         assertThat(shellResult.getStatus()).isEqualTo(CommandStatus.SUCCESS);
@@ -64,11 +64,14 @@ public final class Classpaths {
     }
 
     /** Returns classes defined a given jar file on the test device. */
-    public static ImmutableSet<ClassDef> getClassDefsFromJar(ITestDevice device,
+    public static ImmutableSet<ClassDef> getClassDefsFromJar(INativeDevice device,
             String remoteJarPath) throws DeviceNotAvailableException, IOException {
         File jar = null;
         try {
-            jar = Objects.requireNonNull(device.pullFile(remoteJarPath));
+            jar = device.pullFile(remoteJarPath);
+            if (jar == null) {
+                throw new IllegalStateException("could not pull remote file " + remoteJarPath);
+            }
             MultiDexContainer<? extends DexBackedDexFile> container =
                     DexFileFactory.loadDexContainer(jar, Opcodes.getDefault());
             ImmutableSet.Builder<ClassDef> set = ImmutableSet.builder();
