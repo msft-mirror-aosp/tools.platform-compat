@@ -11,27 +11,21 @@
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
+ * limitations under the License
  */
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
+package com.android.class2nonsdklist;
+
+public class JavadocLinkSyntaxError extends Exception {
+    public final String expected;
+    public final int position;
+    public final String context;
+
+    public JavadocLinkSyntaxError(String expected, StringCursor sc) {
+        super(expected + " at position " + sc.position() + " in " + sc.getOriginalString());
+        this.expected = expected;
+        this.position = sc.position();
+        this.context = sc.getOriginalString();
+    }
 }
 
-java_test_host {
-    name: "unsupportedappusage-processor-test",
-
-    srcs: [
-        "CsvReader.java",
-        "UnsupportedAppUsageProcessorTest.java",
-    ],
-
-    static_libs: [
-        "compile-testing-prebuilt",
-        "junit-host",
-        "mockito-host",
-        "objenesis",
-        "truth-host-prebuilt",
-        "unsupportedappusage-annotation-processor-lib",
-    ],
-}
