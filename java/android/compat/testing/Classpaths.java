@@ -17,9 +17,20 @@
 package android.compat.testing;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
+import com.android.compatibility.common.tradefed.build.CompatibilityBuildHelper;
+import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
+import com.android.ddmlib.testrunner.TestResult.TestStatus;
+import com.android.modules.utils.build.testing.DeviceSdkLevel;
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.INativeDevice;
+import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.result.CollectingTestListener;
+import com.android.tradefed.result.TestDescription;
+import com.android.tradefed.result.TestResult;
+import com.android.tradefed.result.TestRunResult;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
@@ -34,11 +45,14 @@ import org.jf.dexlib2.iface.ClassDef;
 import org.jf.dexlib2.iface.MultiDexContainer;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 
 /**
- * Testing utilities for parsing *CLASSPATH environ variables on a test device.
+ * Testing utilities for parsing *CLASSPATH environ variables and shared libs on a test device.
  */
 public final class Classpaths {
 
@@ -51,6 +65,8 @@ public final class Classpaths {
         SYSTEMSERVERCLASSPATH,
     }
 
+    private static final String TEST_RUNNER = "androidx.test.runner.AndroidJUnitRunner";
+
     /** Returns on device filepaths to the jars that are part of a given classpath. */
     public static ImmutableList<String> getJarsOnClasspath(INativeDevice device,
             ClasspathType classpath) throws DeviceNotAvailableException {
@@ -61,6 +77,21 @@ public final class Classpaths {
         String value = shellResult.getStdout().trim();
         assertThat(value).isNotEmpty();
         return ImmutableList.copyOf(value.split(":"));
+    }
+
+    /** Returns {@link SharedLibraryInfo} about the shared libs available on the test device. */
+    public static ImmutableList<SharedLibraryInfo> getSharedLibraryInfos(ITestDevice device,
+            IBuildInfo buildInfo) throws DeviceNotAvailableException, FileNotFoundException {
+        runDeviceTests(device, buildInfo, SharedLibraryInfo.HELPER_APP_APK,
+                SharedLibraryInfo.HELPER_APP_PACKAGE, SharedLibraryInfo.HELPER_APP_CLASS);
+        String remoteFile = "/sdcard/shared-libs.txt";
+        String content;
+        try {
+            content = device.pullFileContents(remoteFile);
+        } finally {
+            device.deleteFile(remoteFile);
+        }
+        return SharedLibraryInfo.getSharedLibraryInfos(content);
     }
 
     /** Returns classes defined a given jar file on the test device. */
@@ -83,5 +114,40 @@ public final class Classpaths {
             FileUtil.deleteFile(jar);
         }
     }
+
+    private static void runDeviceTests(ITestDevice device, IBuildInfo buildInfo, String apkName,
+            String packageName, String className) throws DeviceNotAvailableException,
+                FileNotFoundException {
+        try {
+            final CompatibilityBuildHelper buildHelper = new CompatibilityBuildHelper(buildInfo);
+            final String installError = device.installPackage(buildHelper.getTestFile(apkName), false);
+            assertWithMessage("Failed to install %s due to: %s", apkName, installError).
+                that(installError).isNull();
+            // Trigger helper app to collect and write info about shared libraries on the device.
+            final RemoteAndroidTestRunner testRunner = new RemoteAndroidTestRunner(packageName,
+                    TEST_RUNNER, device.getIDevice());
+            testRunner.setClassName(className);
+            final CollectingTestListener listener = new CollectingTestListener();
+            assertThat(device.runInstrumentationTests(testRunner, listener)).isTrue();
+            final TestRunResult result = listener.getCurrentRunResults();
+            assertWithMessage("Failed to successfully run device tests for " + result.getName()
+                            + ": " + result.getRunFailureMessage())
+                .that(result.isRunFailure()).isFalse();
+            assertWithMessage("No tests were run!").that(result.getNumTests()).isGreaterThan(0);
+            StringBuilder errorBuilder = new StringBuilder("on-device tests failed:\n");
+            for (Map.Entry<TestDescription, TestResult> resultEntry :
+                    result.getTestResults().entrySet()) {
+                if (!resultEntry.getValue().getStatus().equals(TestStatus.PASSED)) {
+                    errorBuilder.append(resultEntry.getKey().toString());
+                    errorBuilder.append(":\n");
+                    errorBuilder.append(resultEntry.getValue().getStackTrace());
+                }
+            }
+            assertWithMessage(errorBuilder.toString()).that(result.hasFailedTests()).isFalse();
+        }
+        finally {
+            device.uninstallPackage(packageName);
+        }
+}
 
 }
