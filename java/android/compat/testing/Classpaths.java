@@ -22,7 +22,6 @@ import static com.google.common.truth.Truth.assertWithMessage;
 import com.android.compatibility.common.tradefed.build.CompatibilityBuildHelper;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestResult.TestStatus;
-import com.android.modules.utils.build.testing.DeviceSdkLevel;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.INativeDevice;
@@ -47,7 +46,6 @@ import org.jf.dexlib2.iface.MultiDexContainer;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
@@ -103,26 +101,32 @@ public final class Classpaths {
             if (jar == null) {
                 throw new IllegalStateException("could not pull remote file " + remoteJarPath);
             }
-            MultiDexContainer<? extends DexBackedDexFile> container =
-                    DexFileFactory.loadDexContainer(jar, Opcodes.getDefault());
-            ImmutableSet.Builder<ClassDef> set = ImmutableSet.builder();
-            for (String dexName : container.getDexEntryNames()) {
-                set.addAll(Objects.requireNonNull(container.getEntry(dexName)).getClasses());
-            }
-            return set.build();
+            return getClassDefsFromJar(jar);
         } finally {
             FileUtil.deleteFile(jar);
         }
     }
 
+    /** Returns classes defined a given jar file on the test device. */
+    public static ImmutableSet<ClassDef> getClassDefsFromJar(File jar) throws IOException {
+        MultiDexContainer<? extends DexBackedDexFile> container =
+                DexFileFactory.loadDexContainer(jar, Opcodes.getDefault());
+        ImmutableSet.Builder<ClassDef> set = ImmutableSet.builder();
+        for (String dexName : container.getDexEntryNames()) {
+            set.addAll(Objects.requireNonNull(container.getEntry(dexName)).getClasses());
+        }
+        return set.build();
+    }
+
     private static void runDeviceTests(ITestDevice device, IBuildInfo buildInfo, String apkName,
             String packageName, String className) throws DeviceNotAvailableException,
-                FileNotFoundException {
+            FileNotFoundException {
         try {
             final CompatibilityBuildHelper buildHelper = new CompatibilityBuildHelper(buildInfo);
-            final String installError = device.installPackage(buildHelper.getTestFile(apkName), false);
+            final String installError = device.installPackage(buildHelper.getTestFile(apkName),
+                    false);
             assertWithMessage("Failed to install %s due to: %s", apkName, installError).
-                that(installError).isNull();
+                    that(installError).isNull();
             // Trigger helper app to collect and write info about shared libraries on the device.
             final RemoteAndroidTestRunner testRunner = new RemoteAndroidTestRunner(packageName,
                     TEST_RUNNER, device.getIDevice());
@@ -131,8 +135,8 @@ public final class Classpaths {
             assertThat(device.runInstrumentationTests(testRunner, listener)).isTrue();
             final TestRunResult result = listener.getCurrentRunResults();
             assertWithMessage("Failed to successfully run device tests for " + result.getName()
-                            + ": " + result.getRunFailureMessage())
-                .that(result.isRunFailure()).isFalse();
+                    + ": " + result.getRunFailureMessage())
+                    .that(result.isRunFailure()).isFalse();
             assertWithMessage("No tests were run!").that(result.getNumTests()).isGreaterThan(0);
             StringBuilder errorBuilder = new StringBuilder("on-device tests failed:\n");
             for (Map.Entry<TestDescription, TestResult> resultEntry :
@@ -144,10 +148,9 @@ public final class Classpaths {
                 }
             }
             assertWithMessage(errorBuilder.toString()).that(result.hasFailedTests()).isFalse();
-        }
-        finally {
+        } finally {
             device.uninstallPackage(packageName);
         }
-}
+    }
 
 }
