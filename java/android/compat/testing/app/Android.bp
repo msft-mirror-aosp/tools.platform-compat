@@ -1,10 +1,10 @@
-// Copyright (C) 2021 The Android Open Source Project
+// Copyright (C) 2021 Google LLC.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//      http://www.apache.org/licenses/LICENSE-2.0
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,22 +16,25 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-java_test_helper_library {
-    name: "compat-classpaths-testing",
-    srcs: [
-        "Classpaths.java",
-        "SharedLibraryInfo.java"
-    ],
-    host_supported: true,
-    device_supported: false,
-    libs: [
-        "guava",
-        "tradefed",
-        "cts-tradefed",
-        "compatibility-host-util",
-    ],
+android_test_helper_app {
+    name: "SharedLibraryInfoTestApp",
+    srcs: ["SharedLibraryInfoDeviceTest.java"],
+    defaults: ["cts_defaults"],
+    min_sdk_version: "26",
+    target_sdk_version: "31",
     static_libs: [
-        "dexlib2-no-guava-no-cli",
-        "modules-utils-build-testing",
+        "androidx.test.rules",
+        "androidx.test.core",
+        "modules-utils-build",
+        "guava",
+    ],
+    sdk_version: "test_current",
+    test_suites: [
+        "ats",
+        "cts",
+        "gts",
+        "general-tests",
+        "mts",
+        "tvts",
     ],
 }
