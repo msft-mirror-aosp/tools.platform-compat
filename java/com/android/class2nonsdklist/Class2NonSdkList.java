@@ -72,7 +72,6 @@ public class Class2NonSdkList {
         map.put(28, FLAG_MAX_TARGET_P);
         map.put(29, FLAG_MAX_TARGET_Q);
         map.put(30, FLAG_MAX_TARGET_R);
-        map.put(31, FLAG_UNSUPPORTED); // TODO(b/169748350) add support for FLAG_MAX_TARGET_S
         map.put(10000, FLAG_UNSUPPORTED); // VMRuntime.SDK_VERSION_CUR_DEVELOPMENT
         TARGET_SDK_TO_LIST_MAP = Collections.unmodifiableMap(map);
     }
