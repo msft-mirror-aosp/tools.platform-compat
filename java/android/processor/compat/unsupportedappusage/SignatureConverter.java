@@ -18,6 +18,7 @@ package android.processor.compat.unsupportedappusage;
 import static javax.tools.Diagnostic.Kind.ERROR;
 
 import com.google.common.collect.ImmutableMap;
+import com.sun.tools.javac.code.Type;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +36,6 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Types;
 
 /**
@@ -156,7 +156,7 @@ final class SignatureConverter {
                 }
                 return getClassSignature((TypeElement) declaring);
             case TYPEVAR:
-                TypeVariable typeVar = (TypeVariable)type;
+                Type.TypeVar typeVar = (Type.TypeVar) type;
                 if (typeVar.getLowerBound().getKind() != TypeKind.NULL) {
                     return getTypeSignature(typeVar.getLowerBound());
                 } else if (typeVar.getUpperBound().getKind() != TypeKind.NULL) {
