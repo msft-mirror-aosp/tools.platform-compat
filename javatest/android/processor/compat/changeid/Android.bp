@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
-}
-
 java_test_host {
     name: "compat-changeid-annotation-processor-test",
 
@@ -33,5 +29,9 @@ java_test_host {
         "mockito-host",
         "objenesis-host",
         "truth-prebuilt",
+    ],
+
+    test_suites: [
+        "general-tests",
     ],
 }

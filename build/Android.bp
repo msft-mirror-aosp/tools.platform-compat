@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
-}
-
 python_binary_host {
     name: "process-compat-config",
     main: "process_compat_config.py",
@@ -39,6 +35,7 @@ python_test_host {
         "process_compat_config.py",
         "process-compat-config-test.py",
     ],
+    test_suites: ["general-tests"],
     version: {
         py2: {
             enabled: true,
@@ -47,12 +44,10 @@ python_test_host {
             enabled: false,
         },
     },
-    test_options: {
-        unit_test: true,
-    },
 }
 
 global_compat_config {
     name: "global-compat-config",
     filename: "all_compat_config.xml",
 }
+

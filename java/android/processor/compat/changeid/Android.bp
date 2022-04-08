@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
-}
-
 java_library_host {
     name: "compat-changeid-annotation-processor-lib",
 
@@ -62,7 +58,6 @@ java_plugin {
 
     visibility: [
         "//libcore:__pkg__",
-        "//external/icu/android_icu4j:__pkg__",
         "//tools/platform-compat/java/android/compat/annotation:__subpackages__",
     ],
 }

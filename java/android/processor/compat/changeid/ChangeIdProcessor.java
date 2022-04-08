@@ -62,17 +62,15 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
 
     private static final String IGNORED_CLASS = "android.compat.Compatibility";
     private static final ImmutableSet<String> IGNORED_METHOD_NAMES =
-            ImmutableSet.of("reportUnconditionalChange", "isChangeEnabled");
+            ImmutableSet.of("reportChange", "isChangeEnabled");
 
     private static final String CHANGE_ID_QUALIFIED_CLASS_NAME =
             "android.compat.annotation.ChangeId";
 
     private static final String DISABLED_CLASS_NAME = "android.compat.annotation.Disabled";
     private static final String ENABLED_AFTER_CLASS_NAME = "android.compat.annotation.EnabledAfter";
-    private static final String ENABLED_SINCE_CLASS_NAME = "android.compat.annotation.EnabledSince";
     private static final String LOGGING_CLASS_NAME = "android.compat.annotation.LoggingOnly";
     private static final String TARGET_SDK_VERSION = "targetSdkVersion";
-    private static final String OVERRIDABLE_CLASS_NAME = "android.compat.annotation.Overridable";
 
     private static final Pattern JAVADOC_SANITIZER = Pattern.compile("^\\s", Pattern.MULTILINE);
     private static final Pattern HIDE_TAG_MATCHER = Pattern.compile("(\\s|^)@hide(\\s|$)");
@@ -167,7 +165,7 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
                     element);
             return false;
         }
-       return true;
+        return true;
     }
 
     private Change createChange(String packageName, String enclosingElementName, Element element) {
@@ -177,11 +175,8 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
 
         AnnotationMirror changeId = null;
         for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
-            final String type =
-                    ((TypeElement) mirror.getAnnotationType().asElement()).getQualifiedName()
-                            .toString();
-            final AnnotationValue sdkValue =
-                    getAnnotationValue(element, mirror, TARGET_SDK_VERSION);
+            String type =
+                    ((TypeElement) mirror.getAnnotationType().asElement()).getQualifiedName().toString();
             switch (type) {
                 case DISABLED_CLASS_NAME:
                     builder.disabled();
@@ -190,13 +185,8 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
                     builder.loggingOnly();
                     break;
                 case ENABLED_AFTER_CLASS_NAME:
-                    builder.enabledAfter((Integer)(Objects.requireNonNull(sdkValue).getValue()));
-                    break;
-                case ENABLED_SINCE_CLASS_NAME:
-                    builder.enabledSince((Integer)(Objects.requireNonNull(sdkValue).getValue()));
-                    break;
-                case OVERRIDABLE_CLASS_NAME:
-                    builder.overridable();
+                    AnnotationValue value = getAnnotationValue(element, mirror, TARGET_SDK_VERSION);
+                    builder.enabledAfter((Integer)(Objects.requireNonNull(value).getValue()));
                     break;
                 case CHANGE_ID_QUALIFIED_CLASS_NAME:
                     changeId = mirror;
@@ -227,26 +217,17 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
     }
 
     private Change verifyChange(Element element, Change change) {
-        if (change.disabled && (change.enabledAfter != null || change.enabledSince != null)) {
+        if (change.disabled && change.enabledAfter != null) {
             messager.printMessage(
                     ERROR,
-                    "ChangeId cannot be annotated with both @Disabled and "
-                            + "(@EnabledAfter | @EnabledSince).",
+                    "ChangeId cannot be annotated with both @Disabled and @EnabledAfter.",
                     element);
         }
-        if (change.loggingOnly && (change.disabled || change.enabledAfter != null
-                                    || change.enabledSince != null)) {
+        if (change.loggingOnly && (change.disabled || change.enabledAfter != null)) {
             messager.printMessage(
                     ERROR,
                     "ChangeId cannot be annotated with both @LoggingOnly and "
-                            + "(@EnabledAfter | @EnabledSince | @Disabled).",
-                    element);
-        }
-        if (change.enabledAfter != null && change.enabledSince != null) {
-            messager.printMessage(
-                    ERROR,
-                    "ChangeId cannot be annotated with both @EnabledAfter and "
-                            + "@EnabledSince. Prefer using the latter.",
+                            + "(@EnabledAfter | @Disabled).",
                     element);
         }
         return change;
