@@ -60,7 +60,6 @@ public class Class2NonSdkList {
     private static final String FLAG_MAX_TARGET_P = "max-target-p";
     private static final String FLAG_MAX_TARGET_Q = "max-target-q";
     private static final String FLAG_MAX_TARGET_R = "max-target-r";
-    private static final String FLAG_MAX_TARGET_S = "max-target-s";
 
     private static final String FLAG_PUBLIC_API = "public-api";
 
@@ -73,7 +72,7 @@ public class Class2NonSdkList {
         map.put(28, FLAG_MAX_TARGET_P);
         map.put(29, FLAG_MAX_TARGET_Q);
         map.put(30, FLAG_MAX_TARGET_R);
-        map.put(31, FLAG_MAX_TARGET_S);
+        map.put(31, FLAG_UNSUPPORTED); // TODO(b/169748350) add support for FLAG_MAX_TARGET_S
         map.put(32, FLAG_UNSUPPORTED); // same for S_V2 and T
         map.put(33, FLAG_UNSUPPORTED);
         map.put(10000, FLAG_UNSUPPORTED); // VMRuntime.SDK_VERSION_CUR_DEVELOPMENT
