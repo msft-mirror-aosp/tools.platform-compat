@@ -93,21 +93,6 @@ public final class Classpaths {
     }
 
     /** Returns classes defined a given jar file on the test device. */
-    public static ImmutableSet<ClassDef> getClassDefsFromJar(INativeDevice device,
-            String remoteJarPath) throws DeviceNotAvailableException, IOException {
-        File jar = null;
-        try {
-            jar = device.pullFile(remoteJarPath);
-            if (jar == null) {
-                throw new IllegalStateException("could not pull remote file " + remoteJarPath);
-            }
-            return getClassDefsFromJar(jar);
-        } finally {
-            FileUtil.deleteFile(jar);
-        }
-    }
-
-    /** Returns classes defined a given jar file on the test device. */
     public static ImmutableSet<ClassDef> getClassDefsFromJar(File jar) throws IOException {
         MultiDexContainer<? extends DexBackedDexFile> container =
                 DexFileFactory.loadDexContainer(jar, Opcodes.getDefault());
