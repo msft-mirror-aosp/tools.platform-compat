@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2019 The Android Open Source Project
 #
@@ -18,7 +18,6 @@
 
 import difflib
 import io
-from StringIO import StringIO
 import unittest
 import xml.dom.minidom
 from inspect import currentframe, getframeinfo
@@ -33,13 +32,35 @@ class ProcessCompatConfigTest(unittest.TestCase):
 
     def setUp(self):
         self.merger = process_compat_config.ConfigMerger(detect_conflicts = True)
-        self.stderr = StringIO()
+        self.stderr = io.StringIO()
         self.merger.write_errors_to = self.stderr
         self.xml = io.BytesIO()
 
+    def remove_white_space_text_nodes(self, node):
+        remove = []
+        # Find any child nodes that are just white space, and add them to a list
+        # to remove. Do not remove the child while iterating as that prevents
+        # the following node from being seen.
+        for child in node.childNodes:
+            if child.nodeType == node.ELEMENT_NODE:
+                self.remove_white_space_text_nodes(child)
+            elif child.nodeType == node.TEXT_NODE:
+                if str.isspace(child.data):
+                    remove.append(child)
+        # Remove any child nodes that were just white space.
+        for child in remove:
+            node.removeChild(child)
+            child.unlink()
+
+    def parse_xml(self, text):
+        node = xml.dom.minidom.parseString(text)
+        # Remove any white space text nodes as they are irrelevant.
+        self.remove_white_space_text_nodes(node)
+        return node.toprettyxml()
+
     def assert_same_xml(self, got, expected):
-        got = xml.dom.minidom.parseString(got).toprettyxml()
-        expected = xml.dom.minidom.parseString(expected).toprettyxml()
+        got = self.parse_xml(got)
+        expected = self.parse_xml(expected)
         diffs = [diff for diff in difflib.ndiff(got.split('\n'), expected.split('\n')) if not diff.startswith(" ")]
         self.assertEqual("", "\n".join(diffs), msg="Got unexpected diffs in XML")
 
@@ -85,14 +106,14 @@ class ProcessCompatConfigTest(unittest.TestCase):
         self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE" /></config>'), here())
         self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE2" /></config>'), here())
         self.assertIn(r'ERROR: Duplicate definitions for compat change with ID 1234', self.stderr.getvalue())
-        with self.assertRaisesRegexp(Exception, ' 1 .*error'):
+        with self.assertRaisesRegex(Exception, ' 1 .*error'):
             self.merger.write(self.xml)
 
     def test_merge_two_files_duplicate_name(self):
         self.merger.merge(io.BytesIO(b'<config><compat-change id="1234" name="TEST_CHANGE" /></config>'), here())
         self.merger.merge(io.BytesIO(b'<config><compat-change id="1235" name="TEST_CHANGE" /></config>'), here())
         self.assertIn(r'ERROR: Duplicate definitions for compat change with name TEST_CHANGE', self.stderr.getvalue())
-        with self.assertRaisesRegexp(Exception, ' 1 .*error'):
+        with self.assertRaisesRegex(Exception, ' 1 .*error'):
             self.merger.write(self.xml)
 
     def test_merge_two_files_duplicate_id_allow_duplicates(self):

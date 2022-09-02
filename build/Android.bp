@@ -24,10 +24,11 @@ python_binary_host {
     srcs: ["process_compat_config.py"],
     version: {
         py2: {
-            enabled: true,
+            enabled: false,
         },
         py3: {
-            enabled: false,
+            enabled: true,
+            embedded_launcher: true,
         },
     },
 }
@@ -41,10 +42,11 @@ python_test_host {
     ],
     version: {
         py2: {
-            enabled: true,
+            enabled: false,
         },
         py3: {
-            enabled: false,
+            enabled: true,
+            embedded_launcher: true,
         },
     },
     test_options: {

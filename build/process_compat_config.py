@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2020 The Android Open Source Project
 #
@@ -91,6 +91,7 @@ class ConfigMerger(object):
 
     def write(self, filename):
         self._check_error()
+        ET.indent(self.tree)
         self.tree.write(filename, encoding='utf-8', xml_declaration=True)
 
     def write_device_config(self, filename):
