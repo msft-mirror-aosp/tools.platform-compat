@@ -61,6 +61,7 @@ public final class Classpaths {
         BOOTCLASSPATH,
         DEX2OATBOOTCLASSPATH,
         SYSTEMSERVERCLASSPATH,
+        STANDALONE_SYSTEMSERVER_JARS,
     }
 
     private static final String TEST_RUNNER = "androidx.test.runner.AndroidJUnitRunner";
