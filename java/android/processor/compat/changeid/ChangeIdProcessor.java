@@ -55,7 +55,7 @@ import javax.tools.FileObject;
  * Design doc: go/gating-and-logging.
  */
 @SupportedAnnotationTypes({"android.compat.annotation.ChangeId"})
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class ChangeIdProcessor extends SingleAnnotationProcessor {
 
     private static final String CONFIG_XML = "compat_config.xml";
