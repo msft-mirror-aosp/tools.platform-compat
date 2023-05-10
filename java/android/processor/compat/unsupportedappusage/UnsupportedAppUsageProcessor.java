@@ -54,7 +54,7 @@ import javax.tools.FileObject;
  * annotation.
  */
 @SupportedAnnotationTypes({"android.compat.annotation.UnsupportedAppUsage"})
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public final class UnsupportedAppUsageProcessor extends SingleAnnotationProcessor {
 
     private static final String GENERATED_INDEX_FILE_EXTENSION = ".uau";
