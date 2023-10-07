@@ -36,7 +36,7 @@ java_test_host {
         "apache-bcel",
         "guava",
         "junit-host",
-        "truth-host-prebuilt",
+        "truth",
     ],
     test_suites: ["general-tests"],
 }
