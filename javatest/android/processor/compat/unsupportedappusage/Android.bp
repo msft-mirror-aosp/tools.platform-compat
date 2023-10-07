@@ -31,7 +31,7 @@ java_test_host {
         "junit-host",
         "mockito-host",
         "objenesis",
-        "truth-host-prebuilt",
+        "truth",
         "unsupportedappusage-annotation-processor-lib",
     ],
 }
