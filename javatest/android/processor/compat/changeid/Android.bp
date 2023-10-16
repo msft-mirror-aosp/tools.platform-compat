@@ -32,6 +32,6 @@ java_test_host {
         "junit-host",
         "mockito-host",
         "objenesis-host",
-        "truth-prebuilt",
+        "truth",
     ],
 }

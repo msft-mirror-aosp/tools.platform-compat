@@ -24,7 +24,7 @@ java_test_host {
         "annotationvisitor-testutil",
         "class2nonsdklistlib",
         "libjavac",
-        "truth-host-prebuilt",
+        "truth",
         "mockito-host",
         "junit-host",
         "objenesis",
