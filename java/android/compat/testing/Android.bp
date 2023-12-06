@@ -31,7 +31,7 @@ java_test_helper_library {
         "compatibility-host-util",
     ],
     static_libs: [
-        "dexlib2-no-guava-no-cli",
+        "smali-dexlib2-no-guava",
         "modules-utils-build-testing",
     ],
 }
