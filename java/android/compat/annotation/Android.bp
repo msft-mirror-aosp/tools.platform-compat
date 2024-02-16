@@ -60,3 +60,18 @@ java_library {
     sdk_version: "core_current",
     exported_plugins: ["unsupportedappusage-annotation-processor"],
 }
+
+// Identical to unsupportedappusage, but sdk_version is none.
+// Used for core modules where setting sdk_version of the dependencies as
+// core_current leads to circular dependencies
+java_library {
+    name: "unsupportedappusage-sdk-none",
+    host_supported: true,
+    srcs: [
+        "UnsupportedAppUsage.java",
+    ],
+    sdk_version: "none",
+    system_modules: "core-all-system-modules",
+    exported_plugins: ["unsupportedappusage-annotation-processor"],
+    patch_module: "java.base",
+}
