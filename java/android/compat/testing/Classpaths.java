@@ -37,11 +37,11 @@ import com.android.tradefed.util.FileUtil;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-import org.jf.dexlib2.DexFileFactory;
-import org.jf.dexlib2.Opcodes;
-import org.jf.dexlib2.dexbacked.DexBackedDexFile;
-import org.jf.dexlib2.iface.ClassDef;
-import org.jf.dexlib2.iface.MultiDexContainer;
+import com.android.tools.smali.dexlib2.DexFileFactory;
+import com.android.tools.smali.dexlib2.Opcodes;
+import com.android.tools.smali.dexlib2.dexbacked.DexBackedDexFile;
+import com.android.tools.smali.dexlib2.iface.ClassDef;
+import com.android.tools.smali.dexlib2.iface.MultiDexContainer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -94,27 +94,13 @@ public final class Classpaths {
     }
 
     /** Returns classes defined a given jar file on the test device. */
-    public static ImmutableSet<ClassDef> getClassDefsFromJar(INativeDevice device,
-            String remoteJarPath) throws DeviceNotAvailableException, IOException {
-        File jar = null;
-        try {
-            jar = device.pullFile(remoteJarPath);
-            if (jar == null) {
-                throw new IllegalStateException("could not pull remote file " + remoteJarPath);
-            }
-            return getClassDefsFromJar(jar);
-        } finally {
-            FileUtil.deleteFile(jar);
-        }
-    }
-
-    /** Returns classes defined a given jar file on the test device. */
     public static ImmutableSet<ClassDef> getClassDefsFromJar(File jar) throws IOException {
         MultiDexContainer<? extends DexBackedDexFile> container =
                 DexFileFactory.loadDexContainer(jar, Opcodes.getDefault());
         ImmutableSet.Builder<ClassDef> set = ImmutableSet.builder();
         for (String dexName : container.getDexEntryNames()) {
-            set.addAll(Objects.requireNonNull(container.getEntry(dexName)).getClasses());
+            DexBackedDexFile dexFile = container.getEntry(dexName).getDexFile();
+            set.addAll(Objects.requireNonNull(dexFile).getClasses());
         }
         return set.build();
     }
