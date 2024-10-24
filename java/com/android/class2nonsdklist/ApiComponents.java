@@ -250,10 +250,6 @@ public class ApiComponents {
         }
         StringCursor sc = new StringCursor(linkTag);
         try {
-
-            String memberName = "";
-            String methodParameterTypes = "";
-
             int tagPos = sc.find('#');
             String fullyQualifiedClassName = sc.next(tagPos);
 
@@ -279,7 +275,8 @@ public class ApiComponents {
             }
 
             int leftParenPos = sc.find('(');
-            memberName = sc.next(leftParenPos);
+            String memberName = sc.next(leftParenPos);
+            String methodParameterTypes = "";
             if (leftParenPos != -1) {
                 // Consume the '('.
                 sc.next();
