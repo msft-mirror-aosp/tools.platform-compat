@@ -78,6 +78,7 @@ public class Class2NonSdkList {
         map.put(33, FLAG_UNSUPPORTED);
         map.put(34, FLAG_UNSUPPORTED);
         map.put(35, FLAG_UNSUPPORTED);
+        map.put(36, FLAG_UNSUPPORTED);
         map.put(10000, FLAG_UNSUPPORTED); // VMRuntime.SDK_VERSION_CUR_DEVELOPMENT
         TARGET_SDK_TO_LIST_MAP = Collections.unmodifiableMap(map);
     }
