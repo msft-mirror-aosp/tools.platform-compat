@@ -29,6 +29,10 @@ java_library {
         "LoggingOnly.java",
         "Overridable.java",
     ],
+    apex_available: [
+        "com.android.nfcservices",
+        "//apex_available:platform",
+    ],
     sdk_version: "core_current",
     exported_plugins: ["compat-changeid-annotation-processor"],
 }
