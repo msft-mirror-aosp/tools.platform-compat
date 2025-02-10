@@ -204,15 +204,6 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
             }
         }
 
-        String comment =
-                elements.getDocComment(element);
-        if (comment != null) {
-            comment = HIDE_TAG_MATCHER.matcher(comment).replaceAll("");
-            comment = JAVADOC_SANITIZER.matcher(comment).replaceAll("");
-            comment = comment.replaceAll("\\n", " ");
-            builder.description(comment.trim());
-        }
-
         return verifyChange(element,
                 builder.javaClass(enclosingElementName)
                         .javaPackage(packageName)
