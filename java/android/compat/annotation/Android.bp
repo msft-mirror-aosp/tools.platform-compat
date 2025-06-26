@@ -27,6 +27,7 @@ java_library {
         "EnabledAfter.java",
         "EnabledSince.java",
         "LoggingOnly.java",
+        "NoLogging.java",
         "Overridable.java",
     ],
     apex_available: [
@@ -46,6 +47,7 @@ filegroup {
         "EnabledAfter.java",
         "EnabledSince.java",
         "LoggingOnly.java",
+        "NoLogging.java",
         "Overridable.java",
         "UnsupportedAppUsage.java",
     ],
