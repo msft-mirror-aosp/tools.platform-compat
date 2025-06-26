@@ -64,6 +64,7 @@ final class XmlWriter {
     private static final String XML_ID_ATTR = "id";
     private static final String XML_DISABLED_ATTR = "disabled";
     private static final String XML_LOGGING_ATTR = "loggingOnly";
+    private static final String XML_NO_LOGGING_ATTR = "noLogging";
     private static final String XML_ENABLED_AFTER_ATTR = "enableAfterTargetSdk";
     private static final String XML_ENABLED_SINCE_ATTR = "enableSinceTargetSdk";
     private static final String XML_DESCRIPTION_ATTR = "description";
@@ -90,6 +91,9 @@ final class XmlWriter {
         }
         if (change.loggingOnly) {
             newElement.setAttribute(XML_LOGGING_ATTR, "true");
+        }
+        if (change.noLogging) {
+            newElement.setAttribute(XML_NO_LOGGING_ATTR, "true");
         }
         if (change.enabledAfter != null) {
             newElement.setAttribute(XML_ENABLED_AFTER_ATTR, change.enabledAfter.toString());
