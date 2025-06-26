@@ -71,7 +71,6 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
     private static final String ENABLED_AFTER_CLASS_NAME = "android.compat.annotation.EnabledAfter";
     private static final String ENABLED_SINCE_CLASS_NAME = "android.compat.annotation.EnabledSince";
     private static final String LOGGING_CLASS_NAME = "android.compat.annotation.LoggingOnly";
-    private static final String NO_LOGGING_CLASS_NAME = "android.compat.annotation.NoLogging";
     private static final String TARGET_SDK_VERSION = "targetSdkVersion";
     private static final String OVERRIDABLE_CLASS_NAME = "android.compat.annotation.Overridable";
 
@@ -189,9 +188,6 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
                     break;
                 case LOGGING_CLASS_NAME:
                     builder.loggingOnly();
-                    break;
-                case NO_LOGGING_CLASS_NAME:
-                    builder.noLogging();
                     break;
                 case ENABLED_AFTER_CLASS_NAME:
                     builder.enabledAfter((Integer)(Objects.requireNonNull(sdkValue).getValue()));
