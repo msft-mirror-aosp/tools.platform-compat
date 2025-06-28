@@ -66,16 +66,6 @@ public class ChangeIdProcessorTest {
                     "@Target({FIELD})",
                     "public @interface LoggingOnly {",
                     "}"),
-            JavaFileObjects.forSourceLines("android.compat.annotation.NoLogging",
-                    "package android.compat.annotation;",
-                    "import static java.lang.annotation.ElementType.FIELD;",
-                    "import static java.lang.annotation.RetentionPolicy.SOURCE;",
-                    "import java.lang.annotation.Retention;",
-                    "import java.lang.annotation.Target;",
-                    "@Retention(SOURCE)",
-                    "@Target({FIELD})",
-                    "public @interface NoLogging {",
-                    "}"),
             JavaFileObjects.forSourceLines("android.compat.annotation.EnabledAfter",
                     "package android.compat.annotation;",
                     "import static java.lang.annotation.ElementType.FIELD;",
@@ -490,34 +480,6 @@ public class ChangeIdProcessorTest {
         };
         String expectedFile = HEADER + "<config>" +
                 "<compat-change id=\"123456789\" loggingOnly=\"true\" name=\"MY_CHANGE_ID\">" +
-                "<meta-data definedIn=\"libcore.util.Compat\" " +
-                "sourcePosition=\"libcore/util/Compat.java:6\"/>" +
-                "</compat-change></config>";
-        Compilation compilation =
-                Compiler.javac()
-                        .withProcessors(new ChangeIdProcessor())
-                        .compile(ObjectArrays.concat(mAnnotations, source, JavaFileObject.class));
-        CompilationSubject.assertThat(compilation).succeeded();
-        CompilationSubject.assertThat(compilation).generatedFile(CLASS_OUTPUT, "libcore.util",
-                "Compat_compat_config.xml").contentsAsString(UTF_8).isEqualTo(expectedFile);
-    }
-
-    @Test
-    public void testNoLogging() {
-        JavaFileObject[] source = {
-                JavaFileObjects.forSourceLines(
-                        "libcore.util.Compat",
-                        "package libcore.util;",
-                        "import android.compat.annotation.ChangeId;",
-                        "import android.compat.annotation.NoLogging;",
-                        "public class Compat {",
-                        "    @NoLogging",
-                        "    @ChangeId",
-                        "    static final long MY_CHANGE_ID = 123456789l;",
-                        "}")
-        };
-        String expectedFile = HEADER + "<config>" +
-                "<compat-change id=\"123456789\" name=\"MY_CHANGE_ID\" noLogging=\"true\">" +
                 "<meta-data definedIn=\"libcore.util.Compat\" " +
                 "sourcePosition=\"libcore/util/Compat.java:6\"/>" +
                 "</compat-change></config>";
