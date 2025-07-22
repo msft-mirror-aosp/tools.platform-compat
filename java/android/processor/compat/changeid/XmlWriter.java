@@ -71,7 +71,6 @@ final class XmlWriter {
     private static final String XML_OVERRIDABLE_ATTR = "overridable";
     private static final String XML_METADATA_ELEMENT = "meta-data";
     private static final String XML_DEFINED_IN = "definedIn";
-    private static final String XML_SOURCE_POSITION = "sourcePosition";
 
     private Document mDocument;
     private Element mRoot;
@@ -110,9 +109,6 @@ final class XmlWriter {
         Element metaData = mDocument.createElement(XML_METADATA_ELEMENT);
         if (change.qualifiedClass != null) {
             metaData.setAttribute(XML_DEFINED_IN, change.qualifiedClass);
-        }
-        if (change.sourcePosition != null) {
-            metaData.setAttribute(XML_SOURCE_POSITION, change.sourcePosition);
         }
         if (metaData.hasAttributes()) {
             newElement.appendChild(metaData);

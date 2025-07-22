@@ -20,12 +20,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Table;
-import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.LineMap;
-import com.sun.source.tree.Tree;
-import com.sun.source.util.SourcePositions;
-import com.sun.source.util.TreePath;
-import com.sun.source.util.Trees;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,8 +53,6 @@ public abstract class SingleAnnotationProcessor extends AbstractProcessor {
 
     protected Elements elements;
     protected Messager messager;
-    protected SourcePositions sourcePositions;
-    protected Trees trees;
     protected Types types;
 
     @Override
@@ -69,10 +61,7 @@ public abstract class SingleAnnotationProcessor extends AbstractProcessor {
 
         this.elements = processingEnv.getElementUtils();
         this.messager = processingEnv.getMessager();
-        this.trees = Trees.instance(processingEnv);
         this.types = processingEnv.getTypeUtils();
-
-        this.sourcePositions = trees.getSourcePositions();
     }
 
     @Override
@@ -140,31 +129,6 @@ public abstract class SingleAnnotationProcessor extends AbstractProcessor {
             }
         }
         return null;
-    }
-
-    /**
-     * Returns {@link SourcePosition} of an annotation on the given element or null if position is
-     * not found.
-     */
-    @Nullable
-    protected final SourcePosition getSourcePosition(Element element,
-            AnnotationMirror annotationMirror) {
-        TreePath path = trees.getPath(element, annotationMirror);
-        if (path == null) {
-            return null;
-        }
-        CompilationUnitTree compilationUnit = path.getCompilationUnit();
-        Tree tree = path.getLeaf();
-        long startPosition = sourcePositions.getStartPosition(compilationUnit, tree);
-        long endPosition = sourcePositions.getEndPosition(compilationUnit, tree);
-
-        LineMap lineMap = path.getCompilationUnit().getLineMap();
-        return new SourcePosition(
-                compilationUnit.getSourceFile().getName(),
-                lineMap.getLineNumber(startPosition),
-                lineMap.getColumnNumber(startPosition),
-                lineMap.getLineNumber(endPosition),
-                lineMap.getColumnNumber(endPosition));
     }
 
     @Nullable

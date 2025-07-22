@@ -41,10 +41,6 @@ final class Change {
      * Fully qualified class name (including the package) that the change is defined in.
      */
     final String qualifiedClass;
-    /**
-     * Source position, in the form path/to/File.java:line
-     */
-    final String sourcePosition;
 
     Change(
             Long id,
@@ -58,8 +54,7 @@ final class Change {
             boolean overridable,
             String javaPackage,
             String className,
-            String qualifiedClass,
-            String sourcePosition) {
+            String qualifiedClass) {
         this.id = id;
         this.name = name;
         this.disabled = disabled;
@@ -72,7 +67,6 @@ final class Change {
         this.javaPackage = javaPackage;
         this.className = className;
         this.qualifiedClass = qualifiedClass;
-        this.sourcePosition = sourcePosition;
     }
 
     public static class Builder {
@@ -88,7 +82,6 @@ final class Change {
         String javaPackage;
         String javaClass;
         String qualifiedClass;
-        String sourcePosition;
 
         Builder() {
         }
@@ -153,11 +146,6 @@ final class Change {
             return this;
         }
 
-        public Builder sourcePosition(String sourcePosition) {
-            this.sourcePosition = sourcePosition;
-            return this;
-        }
-
         public Change build() {
             return new Change(
                     id,
@@ -171,8 +159,7 @@ final class Change {
                     overridable,
                     javaPackage,
                     javaClass,
-                    qualifiedClass,
-                    sourcePosition);
+                    qualifiedClass);
         }
     }
 }
