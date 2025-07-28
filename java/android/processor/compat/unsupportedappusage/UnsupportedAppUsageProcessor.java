@@ -19,7 +19,6 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 import android.processor.compat.SingleAnnotationProcessor;
-import android.processor.compat.SourcePosition;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Table;
@@ -59,21 +58,12 @@ public final class UnsupportedAppUsageProcessor extends SingleAnnotationProcesso
 
     private static final String GENERATED_INDEX_FILE_EXTENSION = ".uau";
 
-    private static final String OVERRIDE_SOURCE_POSITION_PROPERTY = "overrideSourcePosition";
-    private static final Pattern OVERRIDE_SOURCE_POSITION_PROPERTY_PATTERN = Pattern.compile(
-            "^[^:]+:\\d+:\\d+:\\d+:\\d+$");
-
     /**
-     * CSV header line for the columns returned by {@link #getAnnotationIndex(String, TypeElement,
+     * CSV header line for the columns returned by {@link #getAnnotationCsvRecord(String, TypeElement,
      * Element)}.
      */
     private static final String CSV_HEADER = Joiner.on(',').join(
             "signature",
-            "file",
-            "startline",
-            "startcol",
-            "endline",
-            "endcol",
             "properties"
     );
 
@@ -90,10 +80,10 @@ public final class UnsupportedAppUsageProcessor extends SingleAnnotationProcesso
                     String signature = signatureConverter.getSignature(
                             types, annotation, annotatedElement);
                     if (signature != null) {
-                        String annotationIndex = getAnnotationIndex(signature, annotation,
+                        String csvRecord = getAnnotationCsvRecord(signature, annotation,
                                 annotatedElement);
-                        if (annotationIndex != null) {
-                            content.add(annotationIndex);
+                        if (csvRecord != null) {
+                            content.add(csvRecord);
                         }
                     }
                 }
@@ -125,57 +115,17 @@ public final class UnsupportedAppUsageProcessor extends SingleAnnotationProcesso
     }
 
     /**
-     * Maps an annotated element to the source position of the @UnsupportedAppUsage annotation
-     * attached to it.
+     * Maps an annotated element to a CSV record containing its signature and properties.
      *
      * <p>It returns CSV in the format:
-     * dex-signature,filename,start-line,start-col,end-line,end-col,properties
-     *
-     * <p>The positions refer to the annotation itself, *not* the annotated member. This can
-     * therefore be used to read just the annotation from the file, and to perform in-place
-     * edits on it.
+     * dex-signature,properties
      *
      * @return A single line of CSV text
      */
     @Nullable
-    private String getAnnotationIndex(String signature, TypeElement annotation, Element element) {
+    private String getAnnotationCsvRecord(String signature, TypeElement annotation, Element element) {
         AnnotationMirror annotationMirror = getSupportedAnnotationMirror(annotation, element);
-        String position = getSourcePositionOverride(element, annotationMirror);
-        if (position == null) {
-            SourcePosition sourcePosition = getSourcePosition(element, annotationMirror);
-            if (sourcePosition == null) {
-                return null;
-            }
-            position = Joiner.on(",").join(
-                    sourcePosition.getFilename(),
-                    sourcePosition.getStartLineNumber(),
-                    sourcePosition.getStartColumnNumber(),
-                    sourcePosition.getEndLineNumber(),
-                    sourcePosition.getEndColumnNumber());
-        }
-        return Joiner.on(",").join(
-                signature,
-                position,
-                getAllProperties(annotationMirror));
-    }
-
-    @Nullable
-    private String getSourcePositionOverride(Element element, AnnotationMirror annotation) {
-        AnnotationValue annotationValue =
-                getAnnotationValue(element, annotation, OVERRIDE_SOURCE_POSITION_PROPERTY);
-        if (annotationValue == null) {
-            return null;
-        }
-
-        String parameterValue = annotationValue.getValue().toString();
-        if (!OVERRIDE_SOURCE_POSITION_PROPERTY_PATTERN.matcher(parameterValue).matches()) {
-            messager.printMessage(ERROR, String.format(
-                    "Expected %s to have format string:int:int:int:int",
-                    OVERRIDE_SOURCE_POSITION_PROPERTY), element, annotation);
-            return null;
-        }
-
-        return parameterValue.replace(':', ',');
+        return Joiner.on(",").join(signature, getAllProperties(annotationMirror));
     }
 
     private boolean hasElement(AnnotationMirror annotation, String elementName) {
@@ -185,8 +135,6 @@ public final class UnsupportedAppUsageProcessor extends SingleAnnotationProcesso
 
     private String getAllProperties(AnnotationMirror annotation) {
         return annotation.getElementValues().keySet().stream()
-                .filter(key -> !key.getSimpleName().toString().equals(
-                        OVERRIDE_SOURCE_POSITION_PROPERTY))
                 .map(key -> String.format(
                         "%s=%s",
                         key.getSimpleName(),

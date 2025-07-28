@@ -42,7 +42,6 @@ public class UnsupportedAppUsageProcessorTest {
             "public @interface UnsupportedAppUsage {",
             "    String expectedSignature() default \"\";\n",
             "    String someProperty() default \"\";",
-            "    String overrideSourcePosition() default \"\";",
             "    String implicitMember() default \"\";",
             "}");
 
@@ -78,22 +77,6 @@ public class UnsupportedAppUsageProcessorTest {
     }
 
     @Test
-    public void testSourcePosition() throws Exception {
-        JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
-                "package a.b;", // 1
-                "import android.compat.annotation.UnsupportedAppUsage;", // 2
-                "public class Class {", // 3
-                "  @UnsupportedAppUsage", // 4
-                "  public void method() {}", // 5
-                "}");
-        Map<String, String> row = compileAndReadCsv(src, "a/b/Class.uau").getContents().get(0);
-        assertThat(row).containsEntry("startline", "4");
-        assertThat(row).containsEntry("startcol", "3");
-        assertThat(row).containsEntry("endline", "4");
-        assertThat(row).containsEntry("endcol", "23");
-    }
-
-    @Test
     public void testAnnotationProperties() throws Exception {
         JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
                 "package a.b;", // 1
@@ -104,60 +87,6 @@ public class UnsupportedAppUsageProcessorTest {
                 "}");
         assertThat(compileAndReadCsv(src, "a/b/Class.uau").getContents().get(0)).containsEntry(
                 "properties", "someProperty=%22value%22");
-    }
-
-    @Test
-    public void testSourcePositionOverride() throws Exception {
-        JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
-                "package a.b;", // 1
-                "import android.compat.annotation.UnsupportedAppUsage;", // 2
-                "public class Class {", // 3
-                "  @UnsupportedAppUsage(overrideSourcePosition=\"otherfile.aidl:30:10:31:20\")",
-                "  public void method() {}", // 5
-                "}");
-        Map<String, String> row = compileAndReadCsv(src, "a/b/Class.uau").getContents().get(0);
-        assertThat(row).containsEntry("file", "otherfile.aidl");
-        assertThat(row).containsEntry("startline", "30");
-        assertThat(row).containsEntry("startcol", "10");
-        assertThat(row).containsEntry("endline", "31");
-        assertThat(row).containsEntry("endcol", "20");
-        assertThat(row).containsEntry("properties", "");
-    }
-
-    @Test
-    public void testSourcePositionOverrideWrongFormat() throws Exception {
-        JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
-                "package a.b;", // 1
-                "import android.compat.annotation.UnsupportedAppUsage;", // 2
-                "public class Class {", // 3
-                "  @UnsupportedAppUsage(overrideSourcePosition=\"invalid\")", // 4
-                "  public void method() {}", // 5
-                "}");
-        Compilation compilation =
-                Compiler.javac().withProcessors(new UnsupportedAppUsageProcessor())
-                        .compile(ANNOTATION, src);
-        CompilationSubject.assertThat(compilation).failed();
-        CompilationSubject.assertThat(compilation).hadErrorContaining(
-                "Expected overrideSourcePosition to have format "
-                        + "string:int:int:int:int").inFile(src).onLine(4);
-    }
-
-    @Test
-    public void testSourcePositionOverrideInvalidInt() throws Exception {
-        JavaFileObject src = JavaFileObjects.forSourceLines("a.b.Class",
-                "package a.b;", // 1
-                "import android.compat.annotation.UnsupportedAppUsage;", // 2
-                "public class Class {", // 3
-                "  @UnsupportedAppUsage(overrideSourcePosition=\"otherfile.aidl:a:b:c:d\")", // 4
-                "  public void method() {}", // 5
-                "}");
-        Compilation compilation =
-                Compiler.javac().withProcessors(new UnsupportedAppUsageProcessor())
-                        .compile(ANNOTATION, src);
-        CompilationSubject.assertThat(compilation).failed();
-        CompilationSubject.assertThat(compilation).hadErrorContaining(
-                "Expected overrideSourcePosition to have format "
-                        + "string:int:int:int:int").inFile(src).onLine(4);
     }
 
     @Test

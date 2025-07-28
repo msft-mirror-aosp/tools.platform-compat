@@ -22,7 +22,6 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 import android.processor.compat.SingleAnnotationProcessor;
-import android.processor.compat.SourcePosition;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Table;
@@ -212,13 +211,7 @@ public class ChangeIdProcessor extends SingleAnnotationProcessor {
                 builder.javaClass(enclosingElementName)
                         .javaPackage(packageName)
                         .qualifiedClass(packageName + "." + enclosingElementName)
-                        .sourcePosition(getLineNumber(element, changeId))
                         .build());
-    }
-
-    private String getLineNumber(Element element, AnnotationMirror mirror) {
-        SourcePosition position = Objects.requireNonNull(getSourcePosition(element, mirror));
-        return String.format("%s:%d", position.getFilename(), position.getStartLineNumber());
     }
 
     private Change verifyChange(Element element, Change change) {
