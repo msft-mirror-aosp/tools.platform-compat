@@ -43,7 +43,7 @@ def change_element_tostring(element):
     s = "%s(%s)" % (element.attrib['name'], element.attrib['id'])
     metadata = element.find('meta-data')
     if metadata is not None:
-        s += " defined in class %s at %s" % (metadata.attrib['definedIn'], metadata.attrib['sourcePosition'])
+        s += " defined in class %s" % (metadata.attrib['definedIn'])
     return s
 
 class ChangeDefinition(collections.namedtuple('ChangeDefinition', ['source', 'element'])):

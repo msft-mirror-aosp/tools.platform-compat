@@ -82,20 +82,20 @@ class ProcessCompatConfigTest(unittest.TestCase):
 
     def test_merge_two_files_metadata(self):
         self.merger.merge(io.BytesIO(
-            b'<config><compat-change id="1234" name="TEST_CHANGE"><meta-data definedIn="some.Class" sourcePosition="some.java:1" />'
+            b'<config><compat-change id="1234" name="TEST_CHANGE"><meta-data definedIn="some.Class" />'
             b'</compat-change></config>'), here())
         self.merger.merge(io.BytesIO(
-            b'<config><compat-change id="1235" name="TEST_CHANGE2"><meta-data definedIn="other.Class" sourcePosition="other.java:2" />'
+            b'<config><compat-change id="1235" name="TEST_CHANGE2"><meta-data definedIn="other.Class" />'
             b'</compat-change></config>'), here())
         self.merger.write(self.xml)
         self.assert_same_xml(self.xml.getvalue(), b'<config>'
-            b'<compat-change id="1234" name="TEST_CHANGE"><meta-data definedIn="some.Class" sourcePosition="some.java:1" /></compat-change>'
-            b'<compat-change id="1235" name="TEST_CHANGE2"><meta-data definedIn="other.Class" sourcePosition="other.java:2" /></compat-change>'
+            b'<compat-change id="1234" name="TEST_CHANGE"><meta-data definedIn="some.Class" /></compat-change>'
+            b'<compat-change id="1235" name="TEST_CHANGE2"><meta-data definedIn="other.Class" /></compat-change>'
             b'</config>')
 
     def test_write_device_config_metadata_stripped(self):
         self.merger.merge(io.BytesIO(
-            b'<config><compat-change id="1234" name="TEST_CHANGE"><meta-data definedIn="some.Class" sourcePosition="file.java:1"/>'
+            b'<config><compat-change id="1234" name="TEST_CHANGE"><meta-data definedIn="some.Class"/>'
             b'</compat-change></config>'), here())
         self.merger.write_device_config(self.xml)
         self.assert_same_xml(self.xml.getvalue(), b'<config>'
