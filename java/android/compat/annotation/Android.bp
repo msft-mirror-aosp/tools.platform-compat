@@ -52,7 +52,7 @@ filegroup {
         "UnsupportedAppUsage.java",
     ],
     visibility: [
-        "//libcore:__pkg__",
+        "//libcore:__subpackages__",
         "//external/icu/android_icu4j:__pkg__",
     ],
 }
