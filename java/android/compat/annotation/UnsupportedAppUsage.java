@@ -55,7 +55,7 @@ import java.lang.annotation.Target;
  *
  * <p>For more details, see go/UnsupportedAppUsage.
  *
- * {@hide}
+ * @hide
  */
 @Retention(CLASS)
 @Target({CONSTRUCTOR, METHOD, FIELD, TYPE})
