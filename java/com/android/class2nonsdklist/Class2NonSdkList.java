@@ -33,6 +33,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
@@ -48,11 +49,22 @@ import java.util.stream.Collectors;
 /**
  * Build time tool for extracting a list of members from jar files that have the
  * @UnsupportedAppUsage annotation, for building the non SDK API lists.
+ *
+ * <p>Also used to extract members with @FlaggedApi for building the flagged API list.
  */
 public class Class2NonSdkList {
 
+    public enum OutputMode {
+        NONE,
+        FLAGS,
+        METADATA,
+        FLAGGED_APIS
+    }
+
     private static final String UNSUPPORTED_APP_USAGE_ANNOTATION =
             "android.compat.annotation.UnsupportedAppUsage";
+    private static final String FLAGGED_API_ANNOTATION =
+            "android.annotation.FlaggedApi";
 
     private static final String FLAG_UNSUPPORTED = "unsupported";
     private static final String FLAG_BLOCKED = "blocked";
@@ -85,22 +97,41 @@ public class Class2NonSdkList {
 
     private final Status mStatus;
     private final String[] mJarFiles;
+    private final OutputMode mOutputMode;
     private final AnnotationConsumer mOutput;
     private final Set<String> mPublicApis;
 
     public static void main(String[] args) {
+        OptionGroup exclusiveGroup = new OptionGroup();
+        exclusiveGroup.addOption(OptionBuilder
+                .withLongOpt("write-flags-csv")
+                .hasArgs(1)
+                .withDescription("Specify file to write hiddenapi flags to.")
+                .create('w'));
+        exclusiveGroup.addOption(OptionBuilder
+                .withLongOpt("write-metadata-csv")
+                .hasArgs(1)
+                .withDescription("Specify a file to write API metaadata to. This is a CSV file " +
+                        "containing any annotation properties for all members. Do not use in " +
+                        "conjunction with --write-flags-csv.")
+                .create('c'));
+        exclusiveGroup.addOption(OptionBuilder
+                .withLongOpt("write-flagged-apis-csv")
+                .hasArgs(1)
+                .withDescription("Specify a file to write flagged apis to. This is a CSV file " +
+                        "containing the flag name for all members. Do not use in " +
+                        "conjunction with --write-flags-csv.")
+                .create('f'));
+        exclusiveGroup.setRequired(true);
+
         Options options = new Options();
+        options.addOptionGroup(exclusiveGroup);
         options.addOption(OptionBuilder
                 .withLongOpt("stub-api-flags")
                 .hasArgs(1)
                 .withDescription("CSV file with API flags generated from public API stubs. " +
                         "Used to de-dupe bridge methods.")
                 .create("s"));
-        options.addOption(OptionBuilder
-                .withLongOpt("write-flags-csv")
-                .hasArgs(1)
-                .withDescription("Specify file to write hiddenapi flags to.")
-                .create('w'));
         options.addOption(OptionBuilder
                 .withLongOpt("debug")
                 .hasArgs(0)
@@ -112,13 +143,6 @@ public class Class2NonSdkList {
                         "Do not use in conjunction with any other arguments.")
                 .hasArgs(0)
                 .create('m'));
-        options.addOption(OptionBuilder
-                .withLongOpt("write-metadata-csv")
-                .hasArgs(1)
-                .withDescription("Specify a file to write API metaadata to. This is a CSV file " +
-                        "containing any annotation properties for all members. Do not use in " +
-                        "conjunction with --write-flags-csv.")
-                .create('c'));
         options.addOption(OptionBuilder
                 .withLongOpt("help")
                 .hasArgs(0)
@@ -152,11 +176,25 @@ public class Class2NonSdkList {
             dumpAllMembers(status, jarFiles);
         } else {
             try {
+                OutputMode outputMode = OutputMode.NONE;
+                String outputCsvFile = null;
+
+                if (cmd.hasOption('c')) {
+                    outputMode = OutputMode.METADATA;
+                    outputCsvFile = cmd.getOptionValue('c');
+                } else if (cmd.hasOption('f')) {
+                    outputMode = OutputMode.FLAGGED_APIS;
+                    outputCsvFile = cmd.getOptionValue('f');
+                } else if (cmd.hasOption('w')) {
+                    outputMode = OutputMode.FLAGS;
+                    outputCsvFile = cmd.getOptionValue('w');
+                }
+
                 Class2NonSdkList c2nsl = new Class2NonSdkList(
                         status,
                         cmd.getOptionValue('s', null),
-                        cmd.getOptionValue('w', null),
-                        cmd.getOptionValue('c', null),
+                        outputCsvFile,
+                        outputMode,
                         jarFiles);
                 c2nsl.main();
             } catch (IOException e) {
@@ -172,16 +210,17 @@ public class Class2NonSdkList {
 
     }
 
-    private Class2NonSdkList(Status status, String stubApiFlagsFile, String csvFlagsFile,
-            String csvMetadataFile, String[] jarFiles)
+    private Class2NonSdkList(Status status, String stubApiFlagsFile, String outputCsvFile,
+            OutputMode outputMode, String[] jarFiles)
             throws IOException {
         mStatus = status;
         mJarFiles = jarFiles;
-        if (csvMetadataFile != null) {
-            mOutput = new AnnotationPropertyWriter(csvMetadataFile);
-        } else {
-            mOutput = new HiddenapiFlagsWriter(csvFlagsFile);
-        }
+        mOutputMode = outputMode;
+        mOutput = switch (outputMode) {
+            case FLAGS, FLAGGED_APIS -> new HiddenapiFlagsWriter(outputCsvFile);
+            case METADATA -> new AnnotationPropertyWriter(outputCsvFile);
+            default -> throw new RuntimeException("Invalid output mode"); // should never happen
+        };
 
         if (stubApiFlagsFile != null) {
             mPublicApis =
@@ -197,22 +236,29 @@ public class Class2NonSdkList {
 
     private Map<String, AnnotationHandler> createAnnotationHandlers() {
         Builder<String, AnnotationHandler> builder = ImmutableMap.builder();
-        UnsupportedAppUsageAnnotationHandler greylistAnnotationHandler =
-                new UnsupportedAppUsageAnnotationHandler(
-                    mStatus, mOutput, mPublicApis, TARGET_SDK_TO_LIST_MAP);
+        if (mOutputMode == OutputMode.FLAGGED_APIS) {
+            FlaggedApiAnnotationHandler flaggedApiAnnotationHandler =
+                    new FlaggedApiAnnotationHandler(mOutput);
+            builder.put(classNameToSignature(FLAGGED_API_ANNOTATION), flaggedApiAnnotationHandler);
+        } else {
+            UnsupportedAppUsageAnnotationHandler greylistAnnotationHandler =
+                    new UnsupportedAppUsageAnnotationHandler(
+                        mStatus, mOutput, mPublicApis, TARGET_SDK_TO_LIST_MAP);
 
-        addRepeatedAnnotationHandlers(
-                builder,
-                classNameToSignature(UNSUPPORTED_APP_USAGE_ANNOTATION),
-                classNameToSignature(UNSUPPORTED_APP_USAGE_ANNOTATION + "$Container"),
-                greylistAnnotationHandler);
+            addRepeatedAnnotationHandlers(
+                    builder,
+                    classNameToSignature(UNSUPPORTED_APP_USAGE_ANNOTATION),
+                    classNameToSignature(UNSUPPORTED_APP_USAGE_ANNOTATION + "$Container"),
+                    greylistAnnotationHandler);
 
-        CovariantReturnTypeHandler covariantReturnTypeHandler = new CovariantReturnTypeHandler(
-            mOutput, mPublicApis, FLAG_PUBLIC_API);
+            CovariantReturnTypeHandler covariantReturnTypeHandler = new CovariantReturnTypeHandler(
+                mOutput, mPublicApis, FLAG_PUBLIC_API);
 
-        return addRepeatedAnnotationHandlers(builder, CovariantReturnTypeHandler.ANNOTATION_NAME,
-            CovariantReturnTypeHandler.REPEATED_ANNOTATION_NAME, covariantReturnTypeHandler)
-            .build();
+            addRepeatedAnnotationHandlers(builder, CovariantReturnTypeHandler.ANNOTATION_NAME,
+                CovariantReturnTypeHandler.REPEATED_ANNOTATION_NAME, covariantReturnTypeHandler);
+        }
+
+        return builder.build();
     }
 
     private String classNameToSignature(String a) {
